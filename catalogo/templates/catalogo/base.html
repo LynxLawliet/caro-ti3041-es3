@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#20272b">
+    <title>{% block title %}{{ contenido.marca }} | Catálogo Online{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'catalogo/css/base.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <div class="contenedor">
+            <nav class="navbar" aria-label="Navegación principal">
+                <a href="{% url 'inicio' %}" class="marca">
+                    <span class="marca-icono" aria-hidden="true">CK</span>
+                    <span>{{ contenido.marca }}</span>
+                </a>
+
+                <form class="buscador" action="{% url 'lista' %}#catalogo" method="get" role="search">
+                    <label class="visually-hidden" for="buscar-productos">Buscar productos</label>
+                    <input id="buscar-productos" name="q" type="search" value="{{ busqueda|default:'' }}" placeholder="Buscar herramientas o materiales">
+                    <button class="boton-busqueda" type="submit" aria-label="Buscar en el catálogo">
+                        <span aria-hidden="true">⌕</span>
+                    </button>
+                </form>
+
+                <div class="nav-links">
+                    <a href="{% url 'inicio' %}">Inicio</a>
+                    <a href="{% url 'lista' %}">Catálogo</a>
+                    <a href="{% url 'carrito' %}">Carrito <span class="contador-carrito">{{ request.session.carrito|length|default:0 }}</span></a>
+                    {% if request.user.is_authenticated and request.user.is_staff %}
+                        <a href="{% url 'admin_landing' %}" class="btn-acento">Administración</a>
+                    {% endif %}
+                    {% if request.session.usuario_ficticio %}
+                        <span class="saludo-usuario">Hola, {{ request.session.usuario_ficticio }}</span>
+                        <a href="{% url 'logout' %}">Salir</a>
+                    {% else %}
+                        <a href="{% url 'login' %}">Ingresar</a>
+                        <a href="{% url 'registro' %}" class="btn-acento">Registrarse</a>
+                    {% endif %}
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% if messages %}
+            <div class="mensajes">
+                {% for message in messages %}
+                    <div class="mensaje mensaje--{{ message.tags }}"
+                         role="{% if 'error' in message.tags %}alert{% else %}status{% endif %}"
+                         aria-live="{% if 'error' in message.tags %}assertive{% else %}polite{% endif %}"
+                         aria-atomic="true">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="footer-col footer-presentacion">
+                <a href="{% url 'inicio' %}" class="marca marca-footer">
+                    <span class="marca-icono" aria-hidden="true">CK</span>
+                    <span>{{ contenido.marca }}</span>
+                </a>
+                <p>{{ contenido.footer_descripcion|linebreaksbr }}</p>
+            </div>
+            <div class="footer-col">
+                <h2>Explora</h2>
+                <ul>
+                    <li><a href="{% url 'lista' %}">Catálogo técnico</a></li>
+                    <li><a href="{% url 'carrito' %}">Carrito de compras</a></li>
+                    <li><a href="{% url 'checkout' %}">Finalizar compra</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h2>Contacto</h2>
+                <ul>
+                    <li><a href="mailto:contacto@carokahn.cl">contacto@carokahn.cl</a></li>
+                    <li><a href="tel:+56221234567">+56 2 2123 4567</a></li>
+                    <li>Lunes a sábado · 08:00 a 18:00</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 {{ contenido.marca }}. Todos los derechos reservados.</span>
+            <a href="{% url 'lista' %}">Encuentra lo que necesitas <span aria-hidden="true">↗</span></a>
+        </div>
+    </footer>
+</body>
+</html>

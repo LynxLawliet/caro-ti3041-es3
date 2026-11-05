@@ -1,0 +1,91 @@
+{% extends 'catalogo/base.html' %}
+{% load static %}
+
+{% block title %}{{ producto.nombre }} | Ferretería Caro-Kahn{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'catalogo/css/detalle.css' %}">
+{% endblock %}
+
+{% block content %}
+    <section class="pagina-detalle">
+        <div class="contenedor detalle-contenedor">
+            <nav class="migas-pan" aria-label="Ruta de navegación">
+                <a href="{% url 'inicio' %}">Inicio</a>
+                <span aria-hidden="true">/</span>
+                <a href="{% url 'lista' %}">Catálogo</a>
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">{{ producto.nombre }}</span>
+            </nav>
+
+            <article class="detalle-producto">
+                <div class="detalle-visual">
+                    <span class="detalle-etiqueta-imagen">Ficha del producto</span>
+                    <div class="detalle-marco-imagen">
+                        <img src="{% if producto.imagen_url %}{{ producto.imagen_url }}{% else %}{% static 'catalogo/img/logo-caro-kahn.jpg' %}{% endif %}"
+                             alt="Imagen de {{ producto.nombre }}"
+                             class="detalle-imagen"
+                             onerror="this.onerror=null;this.src='{% static 'catalogo/img/logo-caro-kahn.jpg' %}';">
+                    </div>
+                    <div class="detalle-pie-imagen">
+                        <span class="detalle-punto" aria-hidden="true"></span>
+                        <span>Herramientas y materiales seleccionados</span>
+                    </div>
+                </div>
+
+                <div class="detalle-info">
+                    <p class="detalle-categoria"><span aria-hidden="true">↗</span> {{ producto.categoria }}</p>
+                    <h1>{{ producto.nombre }}</h1>
+                    {% if producto.descripcion %}
+                        <p class="detalle-descripcion">{{ producto.descripcion|linebreaksbr }}</p>
+                    {% endif %}
+
+                    <div class="detalle-precio-bloque">
+                        <span class="detalle-precio-etiqueta">Precio</span>
+                        <p class="detalle-precio">${{ producto.precio|floatformat:0 }}</p>
+                    </div>
+
+                    {% if producto.stock > 0 %}
+                        <p class="detalle-stock">
+                            <span class="detalle-stock-punto" aria-hidden="true"></span>
+                            <strong>Disponible</strong>
+                            <span>{{ producto.stock }} unidades en stock</span>
+                        </p>
+                        <form class="formulario-compra" method="post" action="{% url 'agregar_al_carrito' producto.id %}">
+                            {% csrf_token %}
+                            <label class="etiqueta-cantidad" for="cantidad-detalle">Cantidad</label>
+                            <div class="control-compra">
+                                <input id="cantidad-detalle" name="cantidad" type="number" min="1" max="{{ producto.stock }}" value="1" required>
+                                <button class="boton-detalle boton-agregar" type="submit">
+                                    Agregar al carrito <span aria-hidden="true">→</span>
+                                </button>
+                            </div>
+                        </form>
+                        {% if request.session.usuario_ficticio %}
+                            <form class="formulario-compra formulario-compra-directa" method="post" action="{% url 'comprar' producto.id %}">
+                                {% csrf_token %}
+                                <label class="etiqueta-cantidad" for="cantidad-compra-detalle">Compra directa</label>
+                                <div class="control-compra">
+                                    <input id="cantidad-compra-detalle" name="cantidad" type="number" min="1" max="{{ producto.stock }}" value="1" required>
+                                    <button class="boton-comprar" type="submit">Comprar ahora</button>
+                                </div>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <p class="alerta-stock"><span aria-hidden="true">!</span> Producto sin stock disponible</p>
+                    {% endif %}
+
+                    <a class="volver-catalogo" href="{% url 'lista' %}">
+                        <span aria-hidden="true">←</span> Volver al catálogo
+                    </a>
+                </div>
+            </article>
+
+            <div class="detalle-confianza" aria-label="Ventajas de comprar en Caro-Kahn">
+                <span><strong>Precio del producto</strong><small>Valor en pesos chilenos</small></span>
+                <span><strong>Disponibilidad</strong><small>Unidades indicadas en la ficha</small></span>
+                <span><strong>Compra flexible</strong><small>Añade al carrito o compra ahora</small></span>
+            </div>
+        </div>
+    </section>
+{% endblock %}
