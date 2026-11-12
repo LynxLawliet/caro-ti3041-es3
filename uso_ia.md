@@ -129,6 +129,32 @@ Entregó el código completo para base.html y lista.html, estructurando una Land
 Qué se usó o modificó:
 Se extrajo y utilizó el CSS puro para la cuadrícula responsiva (Grid) de las tarjetas de productos y la estructuración del encabezado. Sin embargo, se eliminaron por completo las secciones de "Héroe", "Beneficios", "Testimonios" y "Llamado a la Acción Final", ya que añadían contenido estático que excedía el alcance de las instrucciones de la evaluación. El código se redujo para mantener únicamente la visualización del catálogo y el resumen calculado, asegurando el cumplimiento estricto de la rúbrica.
 
+Consulta 6:
+
+"Actúa como un desarrollador backend experto en Django. Necesito implementar el sistema CRUD completo para el modelo principal de mi aplicación de ferretería ('Producto'), utilizando ModelForm y vistas basadas en funciones.
+
+Requerimientos específicos:
+1. Formulario (forms.py):
+   - Crea una clase ProductoForm que herede de forms.ModelForm vinculada al modelo Producto.
+   - Incluye los campos: nombre, categoria, precio, stock, imagen_url, descripcion y visible.
+   - Aplica etiquetas legibles en español, widgets personalizados con clases CSS y validación para evitar precios o stocks negativos.
+2. Vistas (views.py):
+   - crear_producto: Instancia el formulario vacío (GET) o procesa los datos (POST). Si es válido, guarda y redirige con un mensaje de éxito a la vista del catálogo principal ('lista').
+   - editar_producto: Recibe el ID del producto, obtiene la instancia existente con get_object_or_404, instancia el formulario vinculado a dicha entidad y, tras guardar exitosamente por POST, redirige a 'lista'.
+   - eliminar_producto: Recibe el ID, muestra una plantilla de confirmación (GET) y, al confirmar mediante POST, elimina el objeto de la base de datos y redirige a 'lista'.
+3. Mapeo de URLs (urls.py):
+   - Conecta las rutas: path('agregar/', ...), path('editar/<int:id>/', ...) y path('eliminar/<int:id>/', ...).
+4. Templates:
+   - 'formulario_producto.html': Plantilla unificada que renderice el formulario usando {{ form.as_p }} tanto para creación como para edición, respetando la estética del sitio.
+   - 'eliminar_producto.html': Plantilla de confirmación con método POST y token CSRF que pregunte al usuario antes de borrar el producto.
+   - 'lista.html': Añade botones de 'Editar' y 'Eliminar' junto a cada producto del catálogo, además de un botón destacado para agregar nuevos registros."
+
+Respuesta de la IA:
+Proporcionó la estructura del formulario ProductoForm con validaciones personalizadas en clean_precio y clean_stock, las 3 vistas funcionales con redirección a 'lista', la configuración de rutas en urls.py y el código HTML para formulario_producto.html y eliminar_producto.html, sugiriendo además enlaces de acción en cada tarjeta de lista.html.
+
+Qué se usó o modificó:
+Se adoptó la arquitectura de ModelForm y las tres vistas funcionales con sus correspondientes redirecciones POST hacia 'lista'. Se adaptaron los widgets y las plantillas para integrarse coherentemente con los tokens de diseño (variables CSS, colores #20292D, #F9B313, #F4F5F2 y componentes tipo tarjeta) de Ferretería Caro-Kahn, incorporando también limpieza del producto en el carrito de sesión en caso de eliminación y estilos modulares en formulario.css sin romper ninguno de los tests preexistentes del proyecto.
+
 Conclusión:
 
 Durante el desarrollo de esta primera evaluación en los laboratorios de INACAP Sede Osorno, utilicé la Inteligencia Artificial principalmente como una herramienta para acelerar la escritura de código repetitivo y maquetar el diseño front-end. Le pedí generar los 40 registros en formato JSON porque inventar cada material de ferretería a mano habría consumido demasiado tiempo de la prueba. Esa respuesta me sirvió tal cual, permitiéndome enfocarme en la lógica de views.py. Por otro lado, al solicitar el diseño de la interfaz, la IA tendía a sobre-complicar el código sugiriendo el uso de Bootstrap o inventando funcionalidades fuera de alcance, como sistemas de carrito de compras o paneles de administración. Tuve que corregir exhaustivamente esas respuestas, eliminando todo el código sobrante para no romper la restricción de la evaluación, que exige trabajar sin base de datos. En este proceso aprendí que es vital aplicar un filtro crítico a las respuestas de la IA, asegurándome de extraer únicamente la herencia de plantillas, el bucle de iteración y el CSS puro que necesitaba para cumplir estrictamente con la mejora visual.

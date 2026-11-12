@@ -1,91 +1,50 @@
 {% extends 'catalogo/base.html' %}
+{% load static %}
 
-{% block title %}Confirmar pedido | Ferretería Caro-Kahn{% endblock %}
+{% block title %}Confirmar Cotización y Pedido | Ferretería Caro-Kahn{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'catalogo/css/carrito.css' %}?v=2.1">
+{% endblock %}
 
 {% block content %}
     <section class="contenedor pagina-simple" aria-labelledby="titulo-checkout">
-        <p class="etiqueta-seccion">Reserva temporal</p>
-        <h1 id="titulo-checkout" class="titulo-pagina">Confirmar pedido</h1>
-        <p class="bajada">Hola, {{ request.session.usuario_ficticio }}. Revisa tu cotización antes de confirmarla.</p>
+        <p class="etiqueta-seccion">
+            <span class="etiqueta-punto" aria-hidden="true"></span>
+            Reserva temporal y cotización
+        </p>
+        <h1 id="titulo-checkout" class="titulo-pagina">Confirmar solicitud de cotización</h1>
+        <p class="bajada">Hola, <strong>{{ request.session.usuario_ficticio }}</strong>. Revisa los detalles de tus materiales antes de confirmar tu solicitud.</p>
 
-        <div class="resumen-checkout">
-            {% for item in items_carrito %}
-                <p><span>{{ item.nombre }} x {{ item.cantidad }}</span><strong>${{ item.subtotal|floatformat:0 }}</strong></p>
-            {% endfor %}
-            <p class="total-checkout"><span>Total</span><strong>${{ total_carrito|floatformat:0 }}</strong></p>
+        <div class="banner-cotizacion" role="note">
+            <span class="banner-cotizacion-icono" aria-hidden="true">✓</span>
+            <div>
+                Al confirmar, se reservará temporalmente el stock en tu sesión para preparar la orden y generar el registro administrativo.
+            </div>
         </div>
 
-        <form method="post">
+        <div class="resumen-checkout" role="region" aria-label="Detalle de la cotización">
+            <div style="margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); font-size: 0.85rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">
+                Productos a cotizar
+            </div>
+            {% for item in items_carrito %}
+                <p>
+                    <span>{{ item.nombre }} &times; {{ item.cantidad }}</span>
+                    <strong>${{ item.subtotal|floatformat:0 }}</strong>
+                </p>
+            {% endfor %}
+            <p class="total-checkout">
+                <span>Total de la cotización</span>
+                <strong>${{ total_carrito|floatformat:0 }}</strong>
+            </p>
+        </div>
+
+        <form method="post" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
             {% csrf_token %}
-            <button class="boton-detalle" type="submit">Confirmar pedido</button>
-            <a class="enlace-secundario" href="{% url 'carrito' %}">Volver al carrito</a>
+            <button class="boton-detalle button button--primary" type="submit">
+                Confirmar cotización y pedido →
+            </button>
+            <a class="enlace-secundario" href="{% url 'carrito' %}">← Volver al carrito</a>
         </form>
     </section>
-
-    <style>
-        .resumen-checkout {
-            background: var(--blanco);
-            border: 1px solid var(--borde);
-            box-shadow: var(--sombra);
-            margin: 28px 0 20px;
-            padding: 20px;
-        }
-
-        .resumen-checkout p {
-            border-bottom: 1px solid var(--borde);
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin: 0;
-            padding: 12px 0;
-        }
-
-        .resumen-checkout p span {
-            min-width: 0;
-            overflow-wrap: anywhere;
-        }
-
-        .resumen-checkout p:last-child {
-            border-bottom: 0;
-        }
-
-        .resumen-checkout .total-checkout {
-            font-size: 1.2rem;
-            padding-bottom: 0;
-        }
-
-        .enlace-secundario {
-            margin-left: 16px;
-        }
-
-        @media (max-width: 520px) {
-            .pagina-simple {
-                width: calc(100% - 28px);
-            }
-
-            .resumen-checkout {
-                margin: 20px 0 16px;
-                padding: 14px;
-            }
-
-            .resumen-checkout p {
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .resumen-checkout p strong {
-                flex: 0 0 auto;
-            }
-
-            .pagina-simple form .boton-detalle {
-                width: 100%;
-            }
-
-            .enlace-secundario {
-                display: block;
-                margin: 14px 0 0;
-                text-align: center;
-            }
-        }
-    </style>
 {% endblock %}

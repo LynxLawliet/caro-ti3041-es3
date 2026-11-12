@@ -4,41 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#20272b">
-    <title>{% block title %}{{ contenido.marca }} | Catálogo Online{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'catalogo/css/base.css' %}">
+    <meta name="theme-color" content="#20292d">
+    <title>{% block title %}{{ contenido.marca }} | Catálogo y Cotizaciones{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'catalogo/css/base.css' %}?v=2.1">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <header class="site-header">
         <div class="contenedor">
             <nav class="navbar" aria-label="Navegación principal">
-                <a href="{% url 'inicio' %}" class="marca">
-                    <span class="marca-icono" aria-hidden="true">CK</span>
+                <a href="{% url 'inicio' %}" class="marca header__brand">
+                    <span class="marca-icono header__mark" aria-hidden="true">CK</span>
                     <span>{{ contenido.marca }}</span>
                 </a>
 
-                <form class="buscador" action="{% url 'lista' %}#catalogo" method="get" role="search">
+                <nav class="header__nav" aria-label="Secciones del sitio">
+                    <a href="{% url 'inicio' %}">Inicio</a>
+                    <a href="{% url 'lista' %}">Catálogo</a>
+                    <a href="{% url 'inicio' %}#categorias">Categorías</a>
+                    <a href="{% url 'inicio' %}#beneficios">Servicios</a>
+                </nav>
+
+                <form class="buscador header__search" action="{% url 'lista' %}#catalogo" method="get" role="search">
                     <label class="visually-hidden" for="buscar-productos">Buscar productos</label>
-                    <input id="buscar-productos" name="q" type="search" value="{{ busqueda|default:'' }}" placeholder="Buscar herramientas o materiales">
+                    <input id="buscar-productos" name="q" type="search" value="{{ busqueda|default:'' }}" placeholder="Buscar herramientas o materiales...">
                     <button class="boton-busqueda" type="submit" aria-label="Buscar en el catálogo">
                         <span aria-hidden="true">⌕</span>
                     </button>
                 </form>
 
-                <div class="nav-links">
-                    <a href="{% url 'inicio' %}">Inicio</a>
-                    <a href="{% url 'lista' %}">Catálogo</a>
-                    <a href="{% url 'carrito' %}">Carrito <span class="contador-carrito">{{ request.session.carrito|length|default:0 }}</span></a>
+                <div class="nav-links header__actions">
+                    <a href="{% url 'carrito' %}" class="cart-link" title="Ver carrito y cotización temporal">
+                        <span>Carrito / Cotización</span>
+                        <span class="contador-carrito cart-link__count">{{ request.session.carrito|length|default:0 }}</span>
+                    </a>
                     {% if request.user.is_authenticated and request.user.is_staff %}
-                        <a href="{% url 'admin_landing' %}" class="btn-acento">Administración</a>
+                        <a href="{% url 'admin_landing' %}" class="btn-acento button button--primary button--small">Administración</a>
                     {% endif %}
                     {% if request.session.usuario_ficticio %}
                         <span class="saludo-usuario">Hola, {{ request.session.usuario_ficticio }}</span>
-                        <a href="{% url 'logout' %}">Salir</a>
+                        <a href="{% url 'logout' %}" class="button button--secondary button--small">Salir</a>
                     {% else %}
-                        <a href="{% url 'login' %}">Ingresar</a>
-                        <a href="{% url 'registro' %}" class="btn-acento">Registrarse</a>
+                        <a href="{% url 'login' %}">Iniciar sesión</a>
+                        <a href="{% url 'registro' %}" class="btn-acento button button--primary button--small">Registrarse</a>
                     {% endif %}
                 </div>
             </nav>
@@ -65,18 +73,29 @@
     <footer class="site-footer">
         <div class="footer-grid">
             <div class="footer-col footer-presentacion">
-                <a href="{% url 'inicio' %}" class="marca marca-footer">
-                    <span class="marca-icono" aria-hidden="true">CK</span>
+                <a href="{% url 'inicio' %}" class="marca header__brand">
+                    <span class="marca-icono header__mark" aria-hidden="true">CK</span>
                     <span>{{ contenido.marca }}</span>
                 </a>
                 <p>{{ contenido.footer_descripcion|linebreaksbr }}</p>
+                <p class="footer-horario">Lunes a sábado · 08:00 a 18:00 hrs</p>
             </div>
             <div class="footer-col">
-                <h2>Explora</h2>
+                <h2>Catálogo</h2>
                 <ul>
                     <li><a href="{% url 'lista' %}">Catálogo técnico</a></li>
-                    <li><a href="{% url 'carrito' %}">Carrito de compras</a></li>
-                    <li><a href="{% url 'checkout' %}">Finalizar compra</a></li>
+                    <li><a href="{% url 'inicio' %}#categorias">Categorías principales</a></li>
+                    <li><a href="{% url 'lista' %}?categoria=Herramientas+manuales#catalogo">Herramientas manuales</a></li>
+                    <li><a href="{% url 'lista' %}?categoria=Seguridad+industrial#catalogo">Seguridad industrial</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h2>Servicios y Ayuda</h2>
+                <ul>
+                    <li><a href="{% url 'carrito' %}">Cotización temporal</a></li>
+                    <li><a href="{% url 'inicio' %}#beneficios">Despacho a obra</a></li>
+                    <li><a href="{% url 'checkout' %}">Confirmar cotización</a></li>
+                    <li><a href="{% url 'inicio' %}#beneficios">Términos y condiciones</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -84,13 +103,14 @@
                 <ul>
                     <li><a href="mailto:contacto@carokahn.cl">contacto@carokahn.cl</a></li>
                     <li><a href="tel:+56221234567">+56 2 2123 4567</a></li>
-                    <li>Lunes a sábado · 08:00 a 18:00</li>
+                    <li>Av. Industrial 4520, Santiago</li>
+                    <li>Atención a empresas y particulares</li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <span>&copy; 2026 {{ contenido.marca }}. Todos los derechos reservados.</span>
-            <a href="{% url 'lista' %}">Encuentra lo que necesitas <span aria-hidden="true">↗</span></a>
+            <span>&copy; 2026 {{ contenido.marca }}. Soluciones para construcción, obra y mantenimiento.</span>
+            <a href="{% url 'lista' %}">Explorar catálogo técnico <span aria-hidden="true">↗</span></a>
         </div>
     </footer>
 </body>

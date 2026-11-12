@@ -1,0 +1,63 @@
+{% extends 'catalogo/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar producto: {{ producto.nombre }} | {{ contenido.marca }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'catalogo/css/formulario.css' %}?v=1.0">
+{% endblock %}
+
+{% block content %}
+<section class="formulario-seccion">
+    <div class="formulario-contenedor">
+        <!-- Navegación secundaria / Migas de pan -->
+        <nav class="formulario-migas" aria-label="Migas de pan">
+            <a href="{% url 'inicio' %}">Inicio</a>
+            <span aria-hidden="true">/</span>
+            <a href="{% url 'lista' %}">Catálogo</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">Eliminar producto</span>
+        </nav>
+
+        <div class="formulario-card card-eliminar">
+            <header class="formulario-encabezado">
+                <div class="alerta-icono-peligro" aria-hidden="true">⚠</div>
+                <h1>¿Estás seguro de que deseas eliminar este producto?</h1>
+                <p>Esta acción es irreversible y eliminará definitivamente el artículo del inventario y del catálogo público.</p>
+            </header>
+
+            <div class="producto-resumen-eliminar">
+                <h2>{{ producto.nombre }}</h2>
+                <dl>
+                    <dt>Categoría:</dt>
+                    <dd>{{ producto.categoria.nombre }}</dd>
+
+                    <dt>Precio:</dt>
+                    <dd>${{ producto.precio|floatformat:0 }} CLP</dd>
+
+                    <dt>Stock en bodega:</dt>
+                    <dd>{{ producto.stock }} unidades</dd>
+
+                    {% if producto.descripcion %}
+                        <dt>Descripción:</dt>
+                        <dd>{{ producto.descripcion|truncatewords:25 }}</dd>
+                    {% endif %}
+                </dl>
+                <p class="aviso-peligro">Confirma únicamente si tienes la certeza de que este ítem ya no se comercializará.</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="formulario-acciones">
+                    <button type="submit" class="button button--danger">
+                        Sí, eliminar producto
+                    </button>
+                    <a href="{% url 'lista' %}" class="button button--secondary">
+                        Cancelar y conservar producto
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

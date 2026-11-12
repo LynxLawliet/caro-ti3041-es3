@@ -1,12 +1,13 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.urls import reverse
 from django.utils.text import slugify
 
+from .forms import ProductoForm
 from .models import Categoria, ContenidoSitio, Pedido, Producto, RegistroAdministrativo
 
 CATEGORIA_VISUAL = {
@@ -564,3 +565,81 @@ def checkout(request):
         return redirect('pedido_confirmado')
 
     return render(request, 'catalogo/checkout.html', {'items_carrito': items, 'total_carrito': total})
+
+
+def crear_producto(request):
+    """
+    Vista para crear un nuevo registro instanciando el formulario vacío.
+    Tras guardarse exitosamente con POST, redirige a la vista del listado principal.
+    """
+    if request.method == 'POST':
+        form = ProductoForm(request.POST)
+        if form.is_valid():
+            producto = form.save()
+            messages.success(request, f'Producto "{producto.nombre}" agregado exitosamente.')
+            return redirect('lista')
+    else:
+        form = ProductoForm()
+
+    contexto = {
+        'form': form,
+        'modo': 'crear',
+        'titulo_accion': 'Agregar nuevo producto',
+        'subtitulo_accion': 'Completa el formulario para registrar un nuevo material o herramienta en el catálogo técnico.',
+        'boton_texto': 'Guardar producto',
+        'contenido': cargar_contenido(),
+    }
+    return render(request, 'catalogo/formulario_producto.html', contexto)
+
+
+def editar_producto(request, id):
+    """
+    Vista para editar un registro existente pasando la instancia específica
+    (identificada por su ID) al formulario.
+    Tras guardarse exitosamente con POST, redirige a la vista del listado principal.
+    """
+    producto = get_object_or_404(Producto, pk=id)
+    if request.method == 'POST':
+        form = ProductoForm(request.POST, instance=producto)
+        if form.is_valid():
+            producto = form.save()
+            messages.success(request, f'Producto "{producto.nombre}" actualizado exitosamente.')
+            return redirect('lista')
+    else:
+        form = ProductoForm(instance=producto)
+
+    contexto = {
+        'form': form,
+        'producto': producto,
+        'modo': 'editar',
+        'titulo_accion': f'Editar producto: {producto.nombre}',
+        'subtitulo_accion': 'Modifica los valores del producto y confirma los cambios para actualizar el inventario.',
+        'boton_texto': 'Guardar cambios',
+        'contenido': cargar_contenido(),
+    }
+    return render(request, 'catalogo/formulario_producto.html', contexto)
+
+
+def eliminar_producto(request, id):
+    """
+    Vista para eliminar el objeto de la base de datos previa confirmación.
+    Tras confirmarse exitosamente con POST, redirige a la vista del listado principal.
+    """
+    producto = get_object_or_404(Producto, pk=id)
+    if request.method == 'POST':
+        nombre = producto.nombre
+        carrito = request.session.get('carrito', {})
+        if str(id) in carrito:
+            carrito.pop(str(id), None)
+            request.session['carrito'] = carrito
+            request.session.modified = True
+        producto.delete()
+        messages.success(request, f'Producto "{nombre}" eliminado exitosamente del catálogo.')
+        return redirect('lista')
+
+    contexto = {
+        'producto': producto,
+        'contenido': cargar_contenido(),
+    }
+    return render(request, 'catalogo/eliminar_producto.html', contexto)
+

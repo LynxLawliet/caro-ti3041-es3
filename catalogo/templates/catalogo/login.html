@@ -1,131 +1,117 @@
 {% extends 'catalogo/base.html' %}
+{% load static %}
 
-{% block title %}Iniciar sesión | Ferretería Caro-Kahn{% endblock %}
+{% block title %}{% if modo == 'registro' %}Crear cuenta{% else %}Iniciar sesión{% endif %} | Ferretería Caro-Kahn{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'catalogo/css/login.css' %}?v=2.1">
+{% endblock %}
 
 {% block content %}
     <section class="contenedor pagina-formulario" aria-labelledby="titulo-login">
-        <p class="etiqueta-seccion">Acceso temporal</p>
-        <h1 id="titulo-login" class="titulo-pagina">{% if modo == 'registro' %}Crear una cuenta{% else %}Iniciar sesión{% endif %}</h1>
-        <p class="bajada">{% if modo == 'registro' %}Registra un nombre para guardar tu cotización temporal.{% else %}Accede a tu cotización temporal con tu nombre de usuario.{% endif %}</p>
+        <p class="etiqueta-seccion">
+            <span class="etiqueta-punto" aria-hidden="true"></span>
+            Acceso a cotizaciones
+        </p>
+        <h1 id="titulo-login" class="titulo-pagina">
+            {% if modo == 'registro' %}Crear una cuenta{% else %}Iniciar sesión{% endif %}
+        </h1>
+        <p class="bajada">
+            {% if modo == 'registro' %}
+                Crea una cuenta para guardar tus cotizaciones temporales y solicitar disponibilidad de stock.
+            {% else %}
+                Accede a tu cotización temporal y administra tus solicitudes de materiales.
+            {% endif %}
+        </p>
 
-        <form class="formulario-sesion" method="post">
+        <!-- 11. Nota sobre cotización temporal en acceso -->
+        <div class="banner-cotizacion" role="note" style="margin-top: 1rem; margin-bottom: 0;">
+            <span class="banner-cotizacion-icono" aria-hidden="true">ℹ</span>
+            <div>
+                <strong>¿Para qué sirve tu cuenta?</strong> Permite conservar tus productos seleccionados en cotización temporal durante tu sesión y agilizar el contacto con nuestro equipo comercial.
+            </div>
+        </div>
+
+        <form class="formulario-sesion" method="post" novalidate id="formulario-auth">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.GET.next }}">
+
             <div class="encabezado-formulario">
-                <span class="icono-sesion" aria-hidden="true">●</span>
+                <span class="icono-sesion" aria-hidden="true">👤</span>
                 <div>
-                    <h2>{% if modo == 'registro' %}Registrarse / Crear cuenta{% else %}Iniciar sesión{% endif %}</h2>
-                    <p>Solo solicitamos un nombre para identificar tu reserva.</p>
+                    <h2>{% if modo == 'registro' %}Registro de usuario{% else %}Acceso al sistema{% endif %}</h2>
+                    <p>{% if modo == 'registro' %}Solo solicitamos un nombre y clave de acceso.{% else %}Ingresa tus credenciales de usuario.{% endif %}</p>
                 </div>
             </div>
-            <label for="usuario">Nombre de usuario</label>
-            <input id="usuario" name="usuario" type="text" maxlength="80" autocomplete="username" placeholder="Ej. ana.ingenieria" required autofocus>
-            <label for="contrasena">Contraseña temporal</label>
-            <input id="contrasena" name="contrasena" type="password" minlength="4" autocomplete="current-password" required>
+
+            <!-- Campo Usuario -->
+            <div class="form-field">
+                <label for="usuario">Nombre de usuario</label>
+                <input id="usuario"
+                       name="usuario"
+                       type="text"
+                       maxlength="80"
+                       autocomplete="username"
+                       placeholder="Ej. ana.ingenieria"
+                       aria-describedby="usuario-help"
+                       required
+                       autofocus>
+                <p id="usuario-help" class="form-field__help">Tu identificador para gestionar cotizaciones y compras.</p>
+            </div>
+
+            <!-- Campo Clave de Acceso (antes 'Contraseña temporal') -->
+            <div class="form-field">
+                <label for="contrasena">Clave de acceso</label>
+                <input id="contrasena"
+                       name="contrasena"
+                       type="password"
+                       minlength="4"
+                       autocomplete="{% if modo == 'registro' %}new-password{% else %}current-password{% endif %}"
+                       placeholder="Mínimo 4 caracteres"
+                       aria-describedby="contrasena-help"
+                       required>
+                <p id="contrasena-help" class="form-field__help">Introduce una clave segura de al menos 4 caracteres.</p>
+            </div>
+
             {% if modo == 'registro' %}
-                <label for="confirmacion">Repetir contraseña</label>
-                <input id="confirmacion" name="confirmacion" type="password" minlength="4" autocomplete="new-password" required>
+                <!-- Confirmar Clave -->
+                <div class="form-field">
+                    <label for="confirmacion">Confirmar clave de acceso</label>
+                    <input id="confirmacion"
+                           name="confirmacion"
+                           type="password"
+                           minlength="4"
+                           autocomplete="new-password"
+                           placeholder="Repite tu clave"
+                           aria-describedby="confirmacion-help"
+                           required>
+                    <p id="confirmacion-help" class="form-field__help">Asegúrate de que ambas claves coincidan exactamente.</p>
+                </div>
             {% endif %}
-            <button class="boton-detalle boton-sesion" type="submit">{% if modo == 'registro' %}Crear cuenta{% else %}Iniciar sesión{% endif %}</button>
+
+            <button class="boton-detalle boton-sesion button button--primary" type="submit" id="btn-enviar-auth">
+                {% if modo == 'registro' %}Crear cuenta y comenzar cotización{% else %}Iniciar sesión{% endif %}
+            </button>
         </form>
+
         <p class="cambio-acceso">
             {% if modo == 'registro' %}
-                ¿Ya tienes una cuenta? <a href="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Iniciar sesión</a>
+                ¿Ya tienes una cuenta registrada?
+                <a href="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Iniciar sesión aquí</a>
             {% else %}
-                ¿Aún no tienes cuenta? <a href="{% url 'registro' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Registrarse / Crear cuenta</a>
+                ¿Aún no tienes cuenta para cotizar?
+                <a href="{% url 'registro' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Registrarme ahora</a>
             {% endif %}
         </p>
     </section>
 
-    <style>
-        .pagina-formulario {
-            max-width: 620px;
-        }
-
-        .formulario-sesion {
-            background: var(--blanco);
-            border: 1px solid var(--borde);
-            box-shadow: var(--sombra);
-            display: grid;
-            gap: 10px;
-            margin-top: 28px;
-            padding: 24px;
-        }
-
-        .formulario-sesion label {
-            font-weight: 700;
-        }
-
-        .formulario-sesion input {
-            border: 1px solid var(--borde);
-            border-radius: 4px;
-            padding: 11px 12px;
-        }
-
-        .encabezado-formulario {
-            align-items: center;
-            border-bottom: 1px solid var(--borde);
-            display: flex;
-            gap: 14px;
-            margin-bottom: 8px;
-            padding-bottom: 18px;
-        }
-
-        .encabezado-formulario h2,
-        .encabezado-formulario p {
-            margin: 0;
-        }
-
-        .encabezado-formulario h2 {
-            font-size: 1.15rem;
-        }
-
-        .encabezado-formulario p {
-            color: var(--texto-suave);
-            font-size: 0.9rem;
-        }
-
-        .icono-sesion {
-            align-items: center;
-            background: var(--acento);
-            border-radius: 50%;
-            color: var(--asfalto);
-            display: inline-flex;
-            height: 42px;
-            justify-content: center;
-            width: 42px;
-        }
-
-        .boton-sesion {
-            margin-top: 8px;
-            width: 100%;
-        }
-
-        .cambio-acceso {
-            color: var(--texto-suave);
-            margin: 18px 0 0;
-            text-align: center;
-        }
-
-        @media (max-width: 520px) {
-            .pagina-formulario {
-                width: calc(100% - 28px);
+    <script>
+        document.getElementById('formulario-auth')?.addEventListener('submit', function() {
+            const btn = document.getElementById('btn-enviar-auth');
+            if (btn) {
+                btn.textContent = 'Procesando...';
+                btn.style.opacity = '0.85';
             }
-
-            .formulario-sesion {
-                gap: 9px;
-                margin-top: 22px;
-                padding: 18px 16px;
-            }
-
-            .encabezado-formulario {
-                align-items: flex-start;
-                gap: 11px;
-            }
-
-            .encabezado-formulario h2 {
-                font-size: 1.02rem;
-            }
-        }
-    </style>
+        });
+    </script>
 {% endblock %}

@@ -20,16 +20,16 @@
 
             <article class="detalle-producto">
                 <div class="detalle-visual">
-                    <span class="detalle-etiqueta-imagen">Ficha del producto</span>
+                    <span class="detalle-etiqueta-imagen">Ficha técnica</span>
                     <div class="detalle-marco-imagen">
                         <img src="{% if producto.imagen_url %}{{ producto.imagen_url }}{% else %}{% static 'catalogo/img/logo-caro-kahn.jpg' %}{% endif %}"
-                             alt="Imagen de {{ producto.nombre }}"
+                             alt="Fotografía técnica de {{ producto.nombre }}"
                              class="detalle-imagen"
                              onerror="this.onerror=null;this.src='{% static 'catalogo/img/logo-caro-kahn.jpg' %}';">
                     </div>
                     <div class="detalle-pie-imagen">
                         <span class="detalle-punto" aria-hidden="true"></span>
-                        <span>Herramientas y materiales seleccionados</span>
+                        <span>Materiales y herramientas seleccionados</span>
                     </div>
                 </div>
 
@@ -41,12 +41,13 @@
                     {% endif %}
 
                     <div class="detalle-precio-bloque">
-                        <span class="detalle-precio-etiqueta">Precio</span>
+                        <span class="detalle-precio-etiqueta">Precio de cotización</span>
                         <p class="detalle-precio">${{ producto.precio|floatformat:0 }}</p>
                     </div>
 
+                    <!-- 8. Componente de estado de Stock -->
                     {% if producto.stock > 0 %}
-                        <p class="detalle-stock">
+                        <p class="detalle-stock stock {% if producto.stock < 5 %}stock--low{% else %}stock--available{% endif %}">
                             <span class="detalle-stock-punto" aria-hidden="true"></span>
                             <strong>Disponible</strong>
                             <span>{{ producto.stock }} unidades en stock</span>
@@ -56,7 +57,7 @@
                             <label class="etiqueta-cantidad" for="cantidad-detalle">Cantidad</label>
                             <div class="control-compra">
                                 <input id="cantidad-detalle" name="cantidad" type="number" min="1" max="{{ producto.stock }}" value="1" required>
-                                <button class="boton-detalle boton-agregar" type="submit">
+                                <button class="boton-detalle boton-agregar button button--primary" type="submit">
                                     Agregar al carrito <span aria-hidden="true">→</span>
                                 </button>
                             </div>
@@ -67,12 +68,14 @@
                                 <label class="etiqueta-cantidad" for="cantidad-compra-detalle">Compra directa</label>
                                 <div class="control-compra">
                                     <input id="cantidad-compra-detalle" name="cantidad" type="number" min="1" max="{{ producto.stock }}" value="1" required>
-                                    <button class="boton-comprar" type="submit">Comprar ahora</button>
+                                    <button class="boton-comprar button button--dark" type="submit">Comprar ahora</button>
                                 </div>
                             </form>
                         {% endif %}
                     {% else %}
-                        <p class="alerta-stock"><span aria-hidden="true">!</span> Producto sin stock disponible</p>
+                        <p class="alerta-stock stock stock--out">
+                            <span class="stock-dot" aria-hidden="true">✕</span> Producto sin stock disponible
+                        </p>
                     {% endif %}
 
                     <a class="volver-catalogo" href="{% url 'lista' %}">
@@ -81,10 +84,10 @@
                 </div>
             </article>
 
-            <div class="detalle-confianza" aria-label="Ventajas de comprar en Caro-Kahn">
-                <span><strong>Precio del producto</strong><small>Valor en pesos chilenos</small></span>
-                <span><strong>Disponibilidad</strong><small>Unidades indicadas en la ficha</small></span>
-                <span><strong>Compra flexible</strong><small>Añade al carrito o compra ahora</small></span>
+            <div class="detalle-confianza" aria-label="Ventajas de cotizar en Caro-Kahn">
+                <span><strong>Precio referencial</strong><small>Valores en pesos chilenos para cotización</small></span>
+                <span><strong>Stock verificado</strong><small>Unidades reales indicadas en la ficha</small></span>
+                <span><strong>Gestión flexible</strong><small>Añade a tu cotización o compra ahora</small></span>
             </div>
         </div>
     </section>

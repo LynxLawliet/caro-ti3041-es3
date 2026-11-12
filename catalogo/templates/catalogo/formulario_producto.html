@@ -1,0 +1,57 @@
+{% extends 'catalogo/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_accion }} | {{ contenido.marca }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'catalogo/css/formulario.css' %}?v=1.0">
+{% endblock %}
+
+{% block content %}
+<section class="formulario-seccion">
+    <div class="formulario-contenedor">
+        <!-- Navegación secundaria / Migas de pan -->
+        <nav class="formulario-migas" aria-label="Migas de pan">
+            <a href="{% url 'inicio' %}">Inicio</a>
+            <span aria-hidden="true">/</span>
+            <a href="{% url 'lista' %}">Catálogo</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">{{ titulo_accion }}</span>
+        </nav>
+
+        <div class="formulario-card">
+            <header class="formulario-encabezado">
+                <h1>{{ titulo_accion }}</h1>
+                <p>{{ subtitulo_accion }}</p>
+            </header>
+
+            <form method="post" class="formulario-producto">
+                {% csrf_token %}
+
+                {# Errores globales del formulario si existieran #}
+                {% if form.non_field_errors %}
+                    <div class="alerta alerta--error" role="alert">
+                        <ul class="errorlist">
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {# Renderizado unificado del formulario #}
+                {{ form.as_p }}
+
+                <div class="formulario-acciones">
+                    <button type="submit" class="button button--primary">
+                        {{ boton_texto|default:"Guardar producto" }}
+                    </button>
+                    <a href="{% url 'lista' %}" class="button button--secondary">
+                        Cancelar y volver al catálogo
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,262 @@
+/* ==========================================================================
+   ESTILOS DE FORMULARIOS CRUD — FERRETERÍA CARO-KAHN
+   Consolidado con el sistema de tokens visuales y tipográficos
+   ========================================================================== */
+
+.formulario-seccion {
+    padding: 3rem 0 4.5rem;
+    background-color: var(--color-paper, #f4f5f2);
+    min-height: calc(100vh - 250px);
+}
+
+.formulario-contenedor {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+}
+
+.formulario-migas {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #687276);
+    margin-bottom: 1.25rem;
+}
+
+.formulario-migas a {
+    color: var(--color-ink, #20292d);
+    text-decoration: underline;
+}
+
+.formulario-migas a:hover {
+    color: var(--color-yellow-hover, #d88e00);
+}
+
+/* Tarjeta principal del formulario */
+.formulario-card {
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-md, 0.65rem);
+    padding: 2.25rem 2.5rem;
+    box-shadow: var(--shadow-card, 0 0.5rem 1.5rem rgba(20, 28, 31, 0.08));
+}
+
+.formulario-encabezado {
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-border, #d9dedc);
+}
+
+.formulario-encabezado h1 {
+    font-family: var(--font-display, Georgia, serif);
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+    font-weight: 700;
+    color: var(--color-ink, #20292d);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0 0 0.5rem;
+}
+
+.formulario-encabezado p {
+    font-size: 0.95rem;
+    color: var(--color-text-muted, #687276);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Renderizado con {{ form.as_p }} */
+.formulario-producto p {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0 0 1.35rem;
+}
+
+.formulario-producto p label {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--color-text, #172024);
+    letter-spacing: -0.01em;
+}
+
+/* Inputs, selects y textareas */
+.formulario-producto input[type="text"],
+.formulario-producto input[type="number"],
+.formulario-producto input[type="url"],
+.formulario-producto select,
+.formulario-producto textarea,
+.campo-formulario {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-sm, 0.35rem);
+    background-color: var(--color-paper, #f4f5f2);
+    color: var(--color-text, #172024);
+    font-family: var(--font-interface, Inter, system-ui, sans-serif);
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.formulario-producto textarea,
+.campo-textarea {
+    min-height: 7rem;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.formulario-producto input:focus,
+.formulario-producto select:focus,
+.formulario-producto textarea:focus,
+.campo-formulario:focus {
+    border-color: var(--color-yellow, #f9b313);
+    background-color: var(--color-surface, #ffffff);
+    box-shadow: 0 0 0 3px rgba(249, 179, 19, 0.18);
+}
+
+/* Checkbox especial */
+.formulario-producto p:has(input[type="checkbox"]) {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 1.5rem 0 1rem;
+    padding: 0.75rem 1rem;
+    background-color: #fafbf9;
+    border: 1px dashed var(--color-border, #d9dedc);
+    border-radius: var(--radius-sm, 0.35rem);
+}
+
+.formulario-producto input[type="checkbox"],
+.campo-checkbox {
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: var(--color-yellow, #f9b313);
+    cursor: pointer;
+}
+
+.formulario-producto p:has(input[type="checkbox"]) label {
+    font-weight: 600;
+    cursor: pointer;
+    margin: 0;
+}
+
+/* Textos de ayuda y errores */
+.formulario-producto .helptext {
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #687276);
+    line-height: 1.4;
+    margin-top: 0.2rem;
+}
+
+.formulario-producto .errorlist {
+    list-style: none;
+    margin: 0.25rem 0 0;
+    padding: 0.5rem 0.85rem;
+    background-color: #fdf2f2;
+    border: 1px solid rgba(200, 74, 58, 0.35);
+    border-radius: var(--radius-sm, 0.35rem);
+    color: var(--color-danger, #c84a3a);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Botones de acción del formulario */
+.formulario-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border, #d9dedc);
+}
+
+.formulario-acciones .button {
+    min-height: 2.85rem;
+    padding: 0.75rem 1.35rem;
+    font-size: 0.92rem;
+}
+
+/* ==========================================================================
+   ESTILOS DE CONFIRMACIÓN DE ELIMINACIÓN
+   ========================================================================== */
+
+.card-eliminar {
+    border-top: 4px solid var(--color-danger, #c84a3a);
+}
+
+.alerta-icono-peligro {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    background-color: #fdf2f2;
+    color: var(--color-danger, #c84a3a);
+    border-radius: 50%;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(200, 74, 58, 0.25);
+}
+
+.producto-resumen-eliminar {
+    background-color: var(--color-paper, #f4f5f2);
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-sm, 0.35rem);
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.producto-resumen-eliminar h2 {
+    font-family: var(--font-display, Georgia, serif);
+    font-size: 1.25rem;
+    color: var(--color-ink, #20292d);
+    margin: 0 0 0.5rem;
+}
+
+.producto-resumen-eliminar dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.producto-resumen-eliminar dt {
+    font-weight: 700;
+    color: var(--color-text-muted, #687276);
+}
+
+.producto-resumen-eliminar dd {
+    margin: 0;
+    color: var(--color-text, #172024);
+}
+
+.aviso-peligro {
+    color: var(--color-danger, #c84a3a);
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-top: 0.75rem;
+}
+
+/* Responsividad */
+@media (max-width: 640px) {
+    .formulario-card {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .formulario-acciones {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .formulario-acciones .button {
+        width: 100%;
+        text-align: center;
+    }
+}

@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib import admin
 from django.contrib.sessions.models import Session
 
+from .forms import ProductoForm
 from .models import (
     Categoria,
     ContenidoSitio,
@@ -632,3 +633,104 @@ class AdministracionAuthTests(TestCase):
             response,
             f"{reverse('login')}?next={reverse('admin_landing')}",
         )
+
+
+class ProductoCRUDTests(TestCase):
+    def setUp(self):
+        self.categoria = Categoria.objects.create(nombre="Herramientas Manuales")
+        self.producto = Producto.objects.create(
+            nombre="Taladro Percutor 750W",
+            categoria=self.categoria,
+            precio=49990,
+            stock=12,
+            descripcion="Taladro con percutor de alta resistencia.",
+            visible=True,
+        )
+
+    def test_producto_form_valido(self):
+        form_data = {
+            'nombre': 'Llave Inglesa 10"',
+            'categoria': self.categoria.id,
+            'precio': 12990,
+            'stock': 8,
+            'imagen_url': 'https://ejemplo.com/llave.jpg',
+            'descripcion': 'Herramienta de acero forjado.',
+            'visible': True,
+        }
+        form = ProductoForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_producto_form_invalido_por_precio_o_stock_negativo(self):
+        form = ProductoForm(data={
+            'nombre': 'Sierra Circular',
+            'categoria': self.categoria.id,
+            'precio': -500,
+            'stock': -2,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn('precio', form.errors)
+        self.assertIn('stock', form.errors)
+
+    def test_crear_producto_get_muestra_formulario_vacio(self):
+        response = self.client.get(reverse('crear_producto'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'catalogo/formulario_producto.html')
+        self.assertIsInstance(response.context['form'], ProductoForm)
+        self.assertContains(response, 'Agregar nuevo producto')
+
+    def test_crear_producto_post_exitoso_redirige_a_lista(self):
+        response = self.client.post(reverse('crear_producto'), {
+            'nombre': 'Huincha de medir 5m',
+            'categoria': self.categoria.id,
+            'precio': 4500,
+            'stock': 20,
+            'descripcion': 'Cinta métrica profesional con freno.',
+            'visible': True,
+        })
+        self.assertRedirects(response, reverse('lista'))
+        self.assertTrue(Producto.objects.filter(nombre='Huincha de medir 5m').exists())
+
+    def test_editar_producto_get_carga_instancia(self):
+        response = self.client.get(reverse('editar_producto', args=[self.producto.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'catalogo/formulario_producto.html')
+        self.assertEqual(response.context['form'].instance, self.producto)
+        self.assertContains(response, self.producto.nombre)
+
+    def test_editar_producto_post_exitoso_redirige_a_lista(self):
+        response = self.client.post(reverse('editar_producto', args=[self.producto.id]), {
+            'nombre': 'Taladro Percutor 750W Profesional',
+            'categoria': self.categoria.id,
+            'precio': 54990,
+            'stock': 15,
+            'descripcion': 'Edición mejorada.',
+            'visible': True,
+        })
+        self.assertRedirects(response, reverse('lista'))
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.nombre, 'Taladro Percutor 750W Profesional')
+        self.assertEqual(self.producto.precio, 54990)
+        self.assertEqual(self.producto.stock, 15)
+
+    def test_eliminar_producto_get_muestra_template_confirmacion(self):
+        response = self.client.get(reverse('eliminar_producto', args=[self.producto.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'catalogo/eliminar_producto.html')
+        self.assertContains(response, '¿Estás seguro de que deseas eliminar este producto?')
+        self.assertContains(response, self.producto.nombre)
+
+    def test_eliminar_producto_post_exitoso_redirige_a_lista(self):
+        producto_id = self.producto.id
+        response = self.client.post(reverse('eliminar_producto', args=[producto_id]))
+        self.assertRedirects(response, reverse('lista'))
+        self.assertFalse(Producto.objects.filter(id=producto_id).exists())
+
+    def test_catalogo_muestra_botones_editar_eliminar_y_agregar(self):
+        response = self.client.get(reverse('lista'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('crear_producto'))
+        self.assertContains(response, reverse('editar_producto', args=[self.producto.id]))
+        self.assertContains(response, reverse('eliminar_producto', args=[self.producto.id]))
+        self.assertContains(response, 'Editar')
+        self.assertContains(response, 'Eliminar')
+

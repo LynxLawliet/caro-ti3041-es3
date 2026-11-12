@@ -8,6 +8,7 @@
 {% endblock %}
 
 {% block content %}
+    <!-- 5. Hero con diseño consolidado y jerarquía limpia -->
     <section class="hero">
         <div class="hero-trama" aria-hidden="true"></div>
         <div class="contenedor hero-grid">
@@ -18,20 +19,23 @@
                 </p>
                 <h1 class="titulo-pagina">{{ contenido.home_titulo }}</h1>
                 <p class="bajada hero-texto">{{ contenido.home_descripcion|linebreaksbr }}</p>
+
+                <!-- Dos acciones principales -->
                 <div class="hero-acciones">
                     <a class="boton-detalle" href="{% url 'lista' %}">
                         {{ contenido.home_cta }} <span aria-hidden="true">→</span>
                     </a>
-                    <a class="boton-secundario-home" href="{% url 'carrito' %}">Ver carrito</a>
+                    <a class="boton-secundario-home" href="{% url 'carrito' %}">Ver carrito / Cotización</a>
                 </div>
+
                 <div class="hero-estadisticas" aria-label="Resumen del catálogo">
                     <div class="estadistica">
-                        <strong>{{ total_productos }}</strong>
+                        <strong>{{ total_productos }}+</strong>
                         <span>Productos disponibles</span>
                     </div>
                     <div class="estadistica">
                         <strong>{{ categorias|length }}</strong>
-                        <span>Categorías</span>
+                        <span>Categorías técnicas</span>
                     </div>
                     <div class="estadistica">
                         <strong>100%</strong>
@@ -40,13 +44,14 @@
                 </div>
             </div>
 
+            <!-- Panel de productos destacados a la derecha -->
             <aside class="hero-panel" aria-labelledby="productos-destacados-titulo">
                 <div class="panel-encabezado">
                     <div>
-                        <span class="panel-sobrelinea">Selección para tu taller</span>
+                        <span class="panel-sobrelinea">Selección recomendada</span>
                         <h2 id="productos-destacados-titulo">Productos destacados</h2>
                     </div>
-                    <span class="panel-icono" aria-hidden="true">✳</span>
+                    <span class="panel-icono" aria-hidden="true">★</span>
                 </div>
                 <div class="productos-destacados">
                     {% for producto in productos_destacados %}
@@ -54,7 +59,7 @@
                             <span class="producto-imagen">
                                 <img
                                     src="{% if producto.imagen_url %}{{ producto.imagen_url }}{% else %}{% static 'catalogo/img/logo-caro-kahn.jpg' %}{% endif %}"
-                                    alt=""
+                                    alt="Foto de {{ producto.nombre }}"
                                     loading="lazy"
                                     onerror="this.onerror=null;this.src='{% static 'catalogo/img/logo-caro-kahn.jpg' %}';">
                             </span>
@@ -75,7 +80,8 @@
     </section>
 
     <div class="landing-content">
-        <section class="contenedor seccion seccion-categorias" aria-labelledby="categorias-titulo">
+        <!-- 6. Sección de categorías con tarjetas consistentes e íconos circulares -->
+        <section id="categorias" class="contenedor seccion seccion-categorias" aria-labelledby="categorias-titulo">
             <div class="encabezado-seccion">
                 <div>
                     <p class="etiqueta-seccion">Encuentra lo que buscas</p>
@@ -86,13 +92,15 @@
 
             <div class="grilla-categorias">
                 {% for categoria in categorias %}
-                    <a class="categoria-card categoria-card--{{ categoria.estilo }}" href="{% url 'lista' %}?categoria={{ categoria.nombre|urlencode }}#catalogo">
-                        <span class="categoria-icono" aria-hidden="true">{{ categoria.icono }}</span>
-                        <span class="categoria-texto">
-                            <strong>{{ categoria.nombre }}</strong>
-                            <small>{{ categoria.cantidad }} producto{{ categoria.cantidad|pluralize:"s" }}</small>
-                        </span>
-                        <span class="categoria-flecha" aria-hidden="true">→</span>
+                    <a class="categoria-card category-card categoria-card--{{ categoria.estilo }}" href="{% url 'lista' %}?categoria={{ categoria.nombre|urlencode }}#catalogo">
+                        <div class="category-card__icon categoria-icono" aria-hidden="true">
+                            {{ categoria.icono }}
+                        </div>
+                        <div class="category-card__content categoria-texto">
+                            <h3>{{ categoria.nombre }}</h3>
+                            <span class="conteo-productos">{{ categoria.cantidad }} producto{{ categoria.cantidad|pluralize:"s" }}</span>
+                        </div>
+                        <span class="category-card__arrow categoria-flecha" aria-hidden="true">→</span>
                     </a>
                 {% empty %}
                     <p class="estado-vacio">Estamos preparando nuestras categorías. Vuelve pronto.</p>
@@ -100,7 +108,8 @@
             </div>
         </section>
 
-        <section class="beneficios-seccion" aria-labelledby="beneficios-titulo">
+        <!-- Sección de beneficios / servicios -->
+        <section id="beneficios" class="beneficios-seccion" aria-labelledby="beneficios-titulo">
             <div class="contenedor seccion">
                 <div class="encabezado-seccion encabezado-beneficios">
                     <div>
@@ -112,19 +121,19 @@
 
                 <div class="beneficios-grid">
                     <article class="beneficio">
-                        <span class="beneficio-icono" aria-hidden="true">▦</span>
+                        <span class="beneficio-icono" aria-hidden="true">📦</span>
                         <span class="beneficio-numero">01</span>
                         <h3>{{ contenido.beneficio_1_titulo }}</h3>
                         <p>{{ contenido.beneficio_1_descripcion|linebreaksbr }}</p>
                     </article>
                     <article class="beneficio">
-                        <span class="beneficio-icono" aria-hidden="true">✳</span>
+                        <span class="beneficio-icono" aria-hidden="true">🛡️</span>
                         <span class="beneficio-numero">02</span>
                         <h3>{{ contenido.beneficio_2_titulo }}</h3>
                         <p>{{ contenido.beneficio_2_descripcion|linebreaksbr }}</p>
                     </article>
                     <article class="beneficio">
-                        <span class="beneficio-icono" aria-hidden="true">↗</span>
+                        <span class="beneficio-icono" aria-hidden="true">⚡</span>
                         <span class="beneficio-numero">03</span>
                         <h3>{{ contenido.beneficio_3_titulo }}</h3>
                         <p>{{ contenido.beneficio_3_descripcion|linebreaksbr }}</p>
@@ -133,6 +142,7 @@
             </div>
         </section>
 
+        <!-- Llamada a la acción final -->
         <section class="contenedor cta-section" aria-labelledby="cta-titulo">
             <div class="cta-copy">
                 <p class="etiqueta-seccion">{{ contenido.home_cta_etiqueta }}</p>

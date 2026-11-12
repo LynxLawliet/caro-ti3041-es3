@@ -4,6 +4,10 @@ from . import views
 
 urlpatterns = [
     path('', views.lista, name='lista'),
+    path('agregar/', views.crear_producto, name='crear_producto'),
+    path('agregar-producto/', views.crear_producto, name='agregar_producto'),
+    path('editar/<int:id>/', views.editar_producto, name='editar_producto'),
+    path('eliminar/<int:id>/', views.eliminar_producto, name='eliminar_producto'),
     path('administracion/', views.admin_landing, name='admin_landing'),
     path('carrito/', views.carrito, name='carrito'),
     path('carrito/agregar/<int:producto_id>/', views.agregar_al_carrito, name='agregar_al_carrito'),

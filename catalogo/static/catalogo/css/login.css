@@ -1,0 +1,120 @@
+/* =========================================================
+   HOJA DE ESTILOS MODULAR: LOGIN Y REGISTRO (login.html)
+   Ferretería Caro-Kahn
+   ========================================================= */
+
+.pagina-formulario {
+    max-width: 520px;
+    margin: 3rem auto;
+}
+
+.formulario-sesion {
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-md, 0.65rem);
+    box-shadow: var(--shadow-card, 0 0.5rem 1.5rem rgba(20, 28, 31, 0.08));
+    padding: 2rem;
+    display: grid;
+    gap: 1.15rem;
+    margin-top: 1.5rem;
+}
+
+.encabezado-formulario {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-border, #d9dedc);
+    margin-bottom: 0.5rem;
+}
+
+.icono-sesion {
+    display: grid;
+    flex: 0 0 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border-radius: 50%;
+    background-color: #fff4d4;
+    color: var(--color-yellow-hover, #d88e00);
+    font-size: 1.25rem;
+}
+
+.encabezado-formulario h2 {
+    font-family: var(--font-interface, sans-serif);
+    font-size: 1.15rem;
+    margin: 0 0 0.25rem;
+    color: var(--color-text, #172024);
+}
+
+.encabezado-formulario p {
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #687276);
+    margin: 0;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.form-field label, .formulario-sesion label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text, #172024);
+}
+
+.form-field input, .formulario-sesion input {
+    min-height: 2.75rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-sm, 0.35rem);
+    background: var(--color-paper, #f4f5f2);
+    color: var(--color-text, #172024);
+    font-family: var(--font-interface, sans-serif);
+    font-size: 0.95rem;
+    outline: 0;
+    transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.form-field input:focus, .formulario-sesion input:focus {
+    border-color: var(--color-yellow, #f9b313);
+    background: var(--color-surface, #ffffff);
+}
+
+.form-field__help {
+    font-size: 0.78rem;
+    color: var(--color-text-muted, #687276);
+    margin: 0;
+}
+
+.form-field__error {
+    font-size: 0.82rem;
+    color: var(--color-danger, #c84a3a);
+    font-weight: 600;
+    margin: 0.2rem 0 0;
+}
+
+.boton-sesion {
+    width: 100%;
+    min-height: 3rem;
+    margin-top: 0.75rem;
+}
+
+.cambio-acceso {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--color-text-muted, #687276);
+}
+
+.cambio-acceso a {
+    color: var(--color-ink, #20292d);
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.cambio-acceso a:hover {
+    color: var(--color-yellow-hover, #d88e00);
+}
