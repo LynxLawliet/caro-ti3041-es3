@@ -7,9 +7,10 @@ from django.contrib.auth import get_user_model
 from django.contrib import admin
 from django.contrib.sessions.models import Session
 
-from .forms import ProductoForm
+from .forms import ConsultaClienteForm, ProductoForm
 from .models import (
     Categoria,
+    ConsultaCliente,
     ContenidoSitio,
     DetallePedido,
     Pedido,
@@ -414,6 +415,7 @@ class CheckoutHistorialTests(TestCase):
         self.client.post(reverse('registro'), {
             'usuario': 'cliente-sesion',
             'contrasena': 'clave',
+            'correo': 'cliente@example.com',
             'confirmacion': 'clave',
         })
         self.client.post(
@@ -436,6 +438,7 @@ class CheckoutHistorialTests(TestCase):
         self.client.post(reverse('registro'), {
             'usuario': 'cliente-calculos',
             'contrasena': 'clave',
+            'correo': 'cliente@example.com',
             'confirmacion': 'clave',
         })
         self.client.post(
@@ -473,6 +476,7 @@ class CheckoutHistorialTests(TestCase):
         self.client.post(reverse('registro'), {
             'usuario': 'cliente-cantidad',
             'contrasena': 'clave',
+            'correo': 'cliente@example.com',
             'confirmacion': 'clave',
         })
 
@@ -489,6 +493,7 @@ class CheckoutHistorialTests(TestCase):
         self.client.post(reverse('registro'), {
             'usuario': 'cliente-compra-directa',
             'contrasena': 'clave',
+            'correo': 'cliente@example.com',
             'confirmacion': 'clave',
         })
 
@@ -646,6 +651,12 @@ class ProductoCRUDTests(TestCase):
             descripcion="Taladro con percutor de alta resistencia.",
             visible=True,
         )
+        self.admin_user = get_user_model().objects.create_user(
+            username="admin_crud",
+            password="clave-admin",
+            is_staff=True,
+        )
+        self.client.force_login(self.admin_user)
 
     def test_producto_form_valido(self):
         form_data = {
@@ -734,9 +745,49 @@ class ProductoCRUDTests(TestCase):
         self.assertContains(response, 'Editar')
         self.assertContains(response, 'Eliminar')
 
+    def test_usuario_casual_no_puede_crear_editar_ni_eliminar(self):
+        self.client.logout()
+
+        # Intento anónimo de acceder a formularios de creación, edición y eliminación
+        resp_crear = self.client.get(reverse('crear_producto'))
+        self.assertRedirects(resp_crear, reverse('lista'))
+
+        resp_editar = self.client.get(reverse('editar_producto', args=[self.producto.id]))
+        self.assertRedirects(resp_editar, reverse('lista'))
+
+        resp_eliminar = self.client.get(reverse('eliminar_producto', args=[self.producto.id]))
+        self.assertRedirects(resp_eliminar, reverse('lista'))
+
+        # Intento de envío POST anónimo
+        resp_post = self.client.post(reverse('crear_producto'), {'nombre': 'Intruso'})
+        self.assertRedirects(resp_post, reverse('lista'))
+        self.assertFalse(Producto.objects.filter(nombre='Intruso').exists())
+
+        # Cliente autenticado sin privilegios de staff
+        casual = get_user_model().objects.create_user(
+            username="cliente_sin_privilegios",
+            password="password123",
+            is_staff=False,
+        )
+        self.client.force_login(casual)
+        self.assertRedirects(self.client.get(reverse('crear_producto')), reverse('lista'))
+
+        # En el catálogo, el usuario casual no ve los botones de administración
+        resp_catalogo = self.client.get(reverse('lista'))
+        self.assertNotContains(resp_catalogo, reverse('crear_producto'))
+        self.assertNotContains(resp_catalogo, reverse('editar_producto', args=[self.producto.id]))
+        self.assertNotContains(resp_catalogo, reverse('eliminar_producto', args=[self.producto.id]))
+
 
 class ReportesTests(TestCase):
     def setUp(self):
+        self.admin_user = get_user_model().objects.create_user(
+            username="admin_reportes",
+            password="clave-admin",
+            is_staff=True,
+        )
+        self.client.force_login(self.admin_user)
+
         self.cat_test = Categoria.objects.create(nombre="Categoría Especial Analítica")
         self.p1 = Producto.objects.create(
             nombre="Producto Test Agotado",
@@ -822,4 +873,124 @@ class ReportesTests(TestCase):
         self.assertContains(catalogo_resp, reverse('reporte_resumen'))
         self.assertContains(catalogo_resp, reverse('reporte_critico'))
 
+    def test_usuario_casual_no_puede_ver_ni_acceder_a_reportes(self):
+        self.client.logout()
 
+        # Usuario anónimo no puede acceder a las vistas de reportes
+        resp1 = self.client.get(reverse('reporte_resumen'))
+        self.assertRedirects(resp1, reverse('lista'))
+
+        resp2 = self.client.get(reverse('reporte_critico'))
+        self.assertRedirects(resp2, reverse('lista'))
+
+        # Cliente autenticado sin rol staff tampoco puede acceder
+        casual = get_user_model().objects.create_user(
+            username="cliente_sin_reportes",
+            password="password123",
+            is_staff=False,
+        )
+        self.client.force_login(casual)
+        self.assertRedirects(self.client.get(reverse('reporte_resumen')), reverse('lista'))
+        self.assertRedirects(self.client.get(reverse('reporte_critico')), reverse('lista'))
+
+        # En la barra pública y pie de página, el cliente casual no ve enlaces de gestión
+        resp_publica = self.client.get(reverse('inicio'))
+        self.assertNotContains(resp_publica, reverse('reporte_resumen'))
+        self.assertNotContains(resp_publica, reverse('reporte_critico'))
+
+
+class ConsultaClienteTests(TestCase):
+    def setUp(self):
+        self.cat = Categoria.objects.create(nombre="Herramientas y Accesorios")
+        self.producto = Producto.objects.create(
+            nombre="Alicate Universal 8 pulgadas",
+            categoria=self.cat,
+            precio=7490,
+            stock=10,
+            visible=True,
+        )
+
+    def test_contacto_get_renderiza_formulario_y_contador_visitas(self):
+        response = self.client.get(reverse('contacto'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'catalogo/contacto.html')
+        self.assertContains(response, 'csrfmiddlewaretoken')
+        self.assertIsInstance(response.context['form'], ConsultaClienteForm)
+        self.assertEqual(response.context['visitas'], 1)
+
+        # La segunda recarga suma 1 al contador de visitas en request.session
+        response2 = self.client.get(reverse('contacto'))
+        self.assertEqual(response2.context['visitas'], 2)
+
+    def test_contacto_post_valido_guarda_en_bd_y_redirige(self):
+        response = self.client.post(reverse('contacto'), {
+            'nombre': 'Martín Cifuentes',
+            'correo': 'martin@ejemplo.cl',
+            'producto_interes': self.producto.id,
+            'mensaje': 'Consulta técnica detallada sobre disponibilidad de despacho a obra en Santiago.',
+        })
+        self.assertRedirects(response, reverse('contacto'))
+        self.assertTrue(ConsultaCliente.objects.filter(correo='martin@ejemplo.cl').exists())
+        consulta = ConsultaCliente.objects.get(correo='martin@ejemplo.cl')
+        self.assertEqual(consulta.nombre, 'Martín Cifuentes')
+        self.assertEqual(consulta.producto_interes, self.producto)
+
+    def test_contacto_post_invalido_muestra_errores_y_rechaza(self):
+        response = self.client.post(reverse('contacto'), {
+            'nombre': '',
+            'correo': 'correo-invalido',
+            'mensaje': 'corto',
+        })
+        self.assertEqual(response.status_code, 200)
+        form = response.context['form']
+        self.assertFalse(form.is_valid())
+        self.assertIn('nombre', form.errors)
+        self.assertIn('correo', form.errors)
+        self.assertIn('mensaje', form.errors)
+
+    def test_detalle_guarda_ultimos_3_productos_en_sesion(self):
+        p1 = self.producto
+        p2 = Producto.objects.create(nombre="Herramienta 2", categoria=self.cat, precio=1000, stock=5)
+        p3 = Producto.objects.create(nombre="Herramienta 3", categoria=self.cat, precio=2000, stock=5)
+        p4 = Producto.objects.create(nombre="Herramienta 4", categoria=self.cat, precio=3000, stock=5)
+
+        self.client.get(reverse('detalle', args=[p1.id]))
+        self.client.get(reverse('detalle', args=[p2.id]))
+        self.client.get(reverse('detalle', args=[p3.id]))
+        self.assertEqual(self.client.session['ultimos_vistos'], [p3.id, p2.id, p1.id])
+
+        # Ver un 4to producto desplaza al más antiguo manteniendo máximo 3
+        self.client.get(reverse('detalle', args=[p4.id]))
+        self.assertEqual(self.client.session['ultimos_vistos'], [p4.id, p3.id, p2.id])
+
+
+class RegistroCorreoTests(TestCase):
+    def _datos(self, **extra):
+        datos = {
+            'usuario': 'cliente-correo',
+            'correo': 'cliente@example.com',
+            'contrasena': 'clave',
+            'confirmacion': 'clave',
+        }
+        datos.update(extra)
+        return datos
+
+    def test_formulario_de_registro_solicita_correo(self):
+        response = self.client.get(reverse('registro'))
+        self.assertContains(response, 'name="correo"')
+        self.assertContains(response, 'type="email"')
+
+    def test_registro_sin_correo_es_rechazado(self):
+        response = self.client.post(reverse('registro'), self._datos(correo=''))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('usuario_registrado', self.client.session)
+
+    def test_registro_con_correo_invalido_es_rechazado(self):
+        response = self.client.post(reverse('registro'), self._datos(correo='no-es-correo'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('usuario_registrado', self.client.session)
+
+    def test_registro_con_correo_valido_guarda_la_cuenta(self):
+        response = self.client.post(reverse('registro'), self._datos())
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.session['usuario_registrado']['correo'], 'cliente@example.com')

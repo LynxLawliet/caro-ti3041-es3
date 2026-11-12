@@ -252,3 +252,39 @@ class DetallePedido(models.Model):
     @property
     def subtotal(self):
         return self.precio_unitario * self.cantidad
+
+
+class ConsultaCliente(models.Model):
+    nombre = models.CharField(max_length=150)
+    correo = models.EmailField()
+    mensaje = models.TextField()
+    producto_interes = models.ForeignKey(
+        Producto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="consultas",
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    respuesta = models.TextField(blank=True)
+    respondida_en = models.DateTimeField(null=True, blank=True)
+    respondida_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="consultas_respondidas",
+    )
+
+    class Meta:
+        ordering = ("-fecha",)
+        verbose_name = "consulta de cliente"
+        verbose_name_plural = "consultas de clientes"
+
+    def __str__(self):
+        return f"Consulta de {self.nombre} ({self.correo})"
+
+    @property
+    def respondida(self):
+        return self.respondida_en is not None
+

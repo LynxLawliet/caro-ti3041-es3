@@ -25,14 +25,19 @@
                 <h1>{{ titulo_reporte }}</h1>
                 <p>{{ subtitulo_reporte }}</p>
             </div>
-            <nav class="reporte-selector-tabs" aria-label="Vistas de reporte">
-                <a href="{% url 'reporte_resumen' %}" class="reporte-tab-btn activo" aria-current="page">
-                    <span aria-hidden="true">📊</span> Resumen por Categoría
-                </a>
-                <a href="{% url 'reporte_critico' %}" class="reporte-tab-btn">
-                    <span aria-hidden="true">⚠️</span> Stock Crítico
-                </a>
-            </nav>
+            <div class="reporte-cabecera-acciones">
+                <nav class="reporte-selector-tabs" aria-label="Vistas de reporte">
+                    <a href="{% url 'reporte_resumen' %}" class="reporte-tab-btn activo" aria-current="page">
+                        <span aria-hidden="true">📊</span> Resumen por Categoría
+                    </a>
+                    <a href="{% url 'reporte_critico' %}" class="reporte-tab-btn">
+                        <span aria-hidden="true">⚠️</span> Stock Crítico
+                    </a>
+                </nav>
+                <button type="button" onclick="window.print()" class="button button--secondary button--small" title="Imprimir informe oficial">
+                    <span aria-hidden="true">🖨️</span> Imprimir reporte
+                </button>
+            </div>
         </header>
 
         <!-- Tarjetas de métricas consolidadas (Cálculos de aggregate) -->

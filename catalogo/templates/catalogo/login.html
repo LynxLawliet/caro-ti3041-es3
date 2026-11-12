@@ -40,7 +40,7 @@
                 <span class="icono-sesion" aria-hidden="true">👤</span>
                 <div>
                     <h2>{% if modo == 'registro' %}Registro de usuario{% else %}Acceso al sistema{% endif %}</h2>
-                    <p>{% if modo == 'registro' %}Solo solicitamos un nombre y clave de acceso.{% else %}Ingresa tus credenciales de usuario.{% endif %}</p>
+                    <p>{% if modo == 'registro' %}Solo solicitamos un nombre, tu correo y una clave de acceso.{% else %}Ingresa tus credenciales de usuario.{% endif %}</p>
                 </div>
             </div>
 
@@ -54,10 +54,29 @@
                        autocomplete="username"
                        placeholder="Ej. ana.ingenieria"
                        aria-describedby="usuario-help"
+                       value="{{ valores.usuario|default:'' }}"
                        required
                        autofocus>
                 <p id="usuario-help" class="form-field__help">Tu identificador para gestionar cotizaciones y compras.</p>
             </div>
+
+            {% if modo == 'registro' %}
+                <!-- Campo Correo electrónico -->
+                <div class="form-field">
+                    <label for="correo">Correo electrónico</label>
+                    <input id="correo"
+                           name="correo"
+                           type="email"
+                           maxlength="254"
+                           autocomplete="email"
+                           inputmode="email"
+                           placeholder="ejemplo@correo.cl"
+                           aria-describedby="correo-help"
+                           value="{{ valores.correo|default:'' }}"
+                           required>
+                    <p id="correo-help" class="form-field__help">Lo usaremos para enviarte respuestas a tus consultas y cotizaciones.</p>
+                </div>
+            {% endif %}
 
             <!-- Campo Clave de Acceso (antes 'Contraseña temporal') -->
             <div class="form-field">

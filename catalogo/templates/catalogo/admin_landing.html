@@ -4,7 +4,7 @@
 {% block title %}Administración | {{ contenido.marca }}{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'catalogo/css/admin.css' %}">
+    <link rel="stylesheet" href="{% static 'catalogo/css/admin.css' %}?v=2.4">
 {% endblock %}
 
 {% block content %}
@@ -18,28 +18,73 @@
             <span class="admin-session"><span aria-hidden="true">●</span> Sesión administradora</span>
         </div>
 
-        {% if messages %}
-            <div class="mensajes" aria-live="polite">
-                {% for message in messages %}
-                    <p class="mensaje-admin {{ message.tags }}">{{ message }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
+        <!-- Métricas ejecutivas clave del inventario -->
+        <div class="admin-kpi-grid">
+            <article class="admin-kpi-card">
+                <span class="admin-kpi-card__label">Total Productos</span>
+                <span class="admin-kpi-card__valor">{{ kpis.total_productos|default:productos|length }}</span>
+                <span class="admin-kpi-card__nota">{{ kpis.total_visibles|default:0 }} activos en tienda</span>
+            </article>
+
+            <article class="admin-kpi-card {% if kpis.total_criticos > 0 %}admin-kpi-card--warning{% endif %}">
+                <span class="admin-kpi-card__label">Stock Crítico (≤ 5)</span>
+                <span class="admin-kpi-card__valor">{{ kpis.total_criticos|default:0 }}</span>
+                <a href="{% url 'reporte_critico' %}" class="admin-kpi-card__link">Ver reporte de alerta ↗</a>
+            </article>
+
+            <article class="admin-kpi-card {% if kpis.total_agotados > 0 %}admin-kpi-card--danger{% endif %}">
+                <span class="admin-kpi-card__label">Agotados (0 unid.)</span>
+                <span class="admin-kpi-card__valor">{{ kpis.total_agotados|default:0 }}</span>
+                <span class="admin-kpi-card__nota">Quiebre de inventario</span>
+            </article>
+
+            <article class="admin-kpi-card {% if consultas_pendientes %}admin-kpi-card--warning{% endif %}">
+                <span class="admin-kpi-card__label">Consultas pendientes</span>
+                <span class="admin-kpi-card__valor">{{ consultas_pendientes }}</span>
+                <a href="{% url 'admin_consultas' %}" class="admin-kpi-card__link">Responder consultas ↗</a>
+            </article>
+
+            <article class="admin-kpi-card admin-kpi-card--accent">
+                <span class="admin-kpi-card__label">Módulos de Gestión</span>
+                <span class="admin-kpi-card__valor">2</span>
+                <a href="{% url 'reporte_resumen' %}" class="admin-kpi-card__link">Reporte por categoría ↗</a>
+            </article>
+        </div>
 
         <nav class="admin-menu" aria-label="Secciones de administración">
             <a href="#productos-admin" class="admin-menu-link admin-menu-primary">
                 <span class="admin-menu-icono" aria-hidden="true">▦</span>
-                <span><strong>Productos</strong><small>Catálogo y stock</small></span>
+                <span><strong>Inventario de Productos</strong><small>{{ productos|length }} registrados</small></span>
                 <span class="admin-menu-flecha" aria-hidden="true">↘</span>
             </a>
             <a href="#nuevo-producto-admin" class="admin-menu-link">
                 <span class="admin-menu-icono" aria-hidden="true">＋</span>
-                <span><strong>Añadir producto</strong><small>Crear un registro</small></span>
+                <span><strong>Añadir Producto</strong><small>Crear un registro rápido</small></span>
                 <span class="admin-menu-flecha" aria-hidden="true">↘</span>
+            </a>
+            <a href="{% url 'crear_producto' %}" class="admin-menu-link">
+                <span class="admin-menu-icono" aria-hidden="true">📝</span>
+                <span><strong>Formulario Completo</strong><small>Validación ModelForm</small></span>
+                <span class="admin-menu-flecha" aria-hidden="true">↗</span>
+            </a>
+            <a href="{% url 'reporte_critico' %}" class="admin-menu-link">
+                <span class="admin-menu-icono" aria-hidden="true">⚠️</span>
+                <span><strong>Stock Crítico</strong><small>Control de quiebres</small></span>
+                <span class="admin-menu-flecha" aria-hidden="true">↗</span>
+            </a>
+            <a href="{% url 'reporte_resumen' %}" class="admin-menu-link">
+                <span class="admin-menu-icono" aria-hidden="true">📊</span>
+                <span><strong>Reportes y Estadísticas</strong><small>Agrupación y promedios</small></span>
+                <span class="admin-menu-flecha" aria-hidden="true">↗</span>
+            </a>
+            <a href="{% url 'admin_consultas' %}" class="admin-menu-link">
+                <span class="admin-menu-icono" aria-hidden="true">✉</span>
+                <span><strong>Consultas Técnicas</strong><small>{% if consultas_pendientes %}{{ consultas_pendientes }} por responder{% else %}Sin pendientes{% endif %}</small></span>
+                <span class="admin-menu-flecha" aria-hidden="true">↗</span>
             </a>
             <a href="#contenido-admin" class="admin-menu-link">
                 <span class="admin-menu-icono" aria-hidden="true">✎</span>
-                <span><strong>Contenido del sitio</strong><small>Textos de la tienda</small></span>
+                <span><strong>Contenido del Sitio</strong><small>Textos de portada</small></span>
                 <span class="admin-menu-flecha" aria-hidden="true">↘</span>
             </a>
         </nav>
@@ -198,9 +243,21 @@
                         <div class="producto-admin-header">
                             <div>
                                 <span class="producto-id">ID {{ producto.id }}</span>
+                                {% if producto.stock == 0 %}
+                                    <span class="badge-stock badge-stock--agotado">Agotado (0 unid.)</span>
+                                {% elif producto.stock <= 5 %}
+                                    <span class="badge-stock badge-stock--critico">Stock bajo ({{ producto.stock }})</span>
+                                {% else %}
+                                    <span class="badge-stock badge-stock--ok">Stock: {{ producto.stock }} unid.</span>
+                                {% endif %}
                                 <h3>{{ producto.nombre }}</h3>
                             </div>
-                            <span class="estado-visibilidad">{% if producto.visible %}Visible{% else %}Oculto{% endif %}</span>
+                            <div class="producto-admin-header-actions">
+                                <span class="estado-visibilidad">{% if producto.visible %}Visible{% else %}Oculto{% endif %}</span>
+                                <a href="{% url 'editar_producto' producto.id %}" class="button button--secondary button--small" title="Editar vía formulario completo con validación">
+                                    Editar vía formulario
+                                </a>
+                            </div>
                         </div>
 
                         <form method="post" class="admin-form">
@@ -233,8 +290,8 @@
                                     Mostrar producto en la tienda
                                 </label>
                                 <div class="acciones-admin-producto">
-                                    <button class="boton-detalle" type="submit">Guardar producto</button>
-                                    <button class="boton-eliminar" type="submit" name="accion" value="eliminar_producto" formnovalidate onclick="return confirm('¿Eliminar este producto del catálogo?');">Eliminar</button>
+                                    <button class="boton-detalle" type="submit">Guardar cambios</button>
+                                    <a href="{% url 'eliminar_producto' producto.id %}" class="boton-eliminar-link" title="Confirmar eliminación">Eliminar</a>
                                 </div>
                             </div>
                         </form>

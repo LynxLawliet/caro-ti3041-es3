@@ -124,9 +124,11 @@
                 {% endif %}
             </div>
             <div class="resumen-panel__acciones">
-                <a class="button button--primary button--small boton-agregar-producto" href="{% url 'crear_producto' %}">
-                    <span aria-hidden="true">+</span> Agregar nuevo producto
-                </a>
+                {% if request.user.is_authenticated and request.user.is_staff %}
+                    <a class="button button--primary button--small boton-agregar-producto" href="{% url 'crear_producto' %}">
+                        <span aria-hidden="true">+</span> Agregar nuevo producto
+                    </a>
+                {% endif %}
             </div>
         </div>
 
@@ -208,15 +210,17 @@
                                 </form>
                             {% endif %}
 
-                            <!-- Acciones de gestión de producto (Editar / Eliminar) -->
-                            <div class="acciones-crud">
-                                <a class="boton-crud boton-editar button button--secondary button--small" href="{% url 'editar_producto' producto.id %}" title="Editar {{ producto.nombre }}">
-                                    Editar
-                                </a>
-                                <a class="boton-crud boton-eliminar button button--danger button--small" href="{% url 'eliminar_producto' producto.id %}" title="Eliminar {{ producto.nombre }}">
-                                    Eliminar
-                                </a>
-                            </div>
+                            <!-- Acciones de gestión de producto para administradores (Editar / Eliminar) -->
+                            {% if request.user.is_authenticated and request.user.is_staff %}
+                                <div class="acciones-crud">
+                                    <a class="boton-crud boton-editar button button--secondary button--small" href="{% url 'editar_producto' producto.id %}" title="Editar {{ producto.nombre }}">
+                                        Editar
+                                    </a>
+                                    <a class="boton-crud boton-eliminar button button--danger button--small" href="{% url 'eliminar_producto' producto.id %}" title="Eliminar {{ producto.nombre }}">
+                                        Eliminar
+                                    </a>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </article>

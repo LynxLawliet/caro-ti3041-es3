@@ -4,7 +4,7 @@
 {% block title %}{{ contenido.marca }} | Soluciones para proyectos{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'catalogo/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'catalogo/css/home.css' %}?v=2.4">
 {% endblock %}
 
 {% block content %}
@@ -80,6 +80,52 @@
     </section>
 
     <div class="landing-content">
+        <!-- Carrusel de productos -->
+        {% if productos_carrusel %}
+        <section id="carrusel" class="carrusel-banda" aria-roledescription="carrusel" aria-labelledby="carrusel-titulo">
+        <div class="contenedor seccion carrusel-seccion" data-carrusel>
+            <div class="encabezado-seccion">
+                <div>
+                    <p class="etiqueta-seccion">Descubre nuestro catálogo</p>
+                    <h2 id="carrusel-titulo">Productos para cada trabajo</h2>
+                </div>
+                <div class="carrusel-controles">
+                    <button type="button" class="carrusel-boton" data-carrusel-prev aria-label="Productos anteriores">←</button>
+                    <button type="button" class="carrusel-boton" data-carrusel-next aria-label="Productos siguientes">→</button>
+                </div>
+            </div>
+
+            <div class="carrusel-viewport" data-carrusel-viewport tabindex="0" aria-live="off">
+                <ul class="carrusel-pista" role="list">
+                    {% for producto in productos_carrusel %}
+                        <li class="carrusel-slide" aria-roledescription="diapositiva" aria-label="{{ forloop.counter }} de {{ productos_carrusel|length }}">
+                            <a class="carrusel-card" href="{% url 'detalle' producto.id %}">
+                                <span class="carrusel-imagen">
+                                    <img
+                                        src="{% if producto.imagen_url %}{{ producto.imagen_url }}{% else %}{% static 'catalogo/img/logo-caro-kahn.jpg' %}{% endif %}"
+                                        alt="Foto de {{ producto.nombre }}"
+                                        loading="lazy"
+                                        onerror="this.onerror=null;this.src='{% static 'catalogo/img/logo-caro-kahn.jpg' %}';">
+                                </span>
+                                <span class="carrusel-info">
+                                    <span class="carrusel-categoria">{{ producto.categoria }}</span>
+                                    <strong>{{ producto.nombre }}</strong>
+                                    <span class="carrusel-precio">${{ producto.precio|floatformat:0 }}</span>
+                                </span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="carrusel-pie">
+                <div class="carrusel-puntos" data-carrusel-puntos></div>
+                <button type="button" class="carrusel-boton carrusel-pausa" data-carrusel-pausa aria-pressed="false">Pausar</button>
+            </div>
+        </div>
+        </section>
+        {% endif %}
+
         <!-- 6. Sección de categorías con tarjetas consistentes e íconos circulares -->
         <section id="categorias" class="contenedor seccion seccion-categorias" aria-labelledby="categorias-titulo">
             <div class="encabezado-seccion">
@@ -152,4 +198,109 @@
             <span class="cta-decoracion" aria-hidden="true">CK</span>
         </section>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var raiz = document.querySelector('[data-carrusel]');
+    if (!raiz) return;
+    var vista = raiz.querySelector('[data-carrusel-viewport]');
+    var slides = vista.querySelectorAll('.carrusel-slide');
+    var prev = raiz.querySelector('[data-carrusel-prev]');
+    var next = raiz.querySelector('[data-carrusel-next]');
+    var cont = raiz.querySelector('[data-carrusel-puntos]');
+    var btnPausa = raiz.querySelector('[data-carrusel-pausa]');
+    var reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var pagina = 0, paginas = 1, puntos = [];
+    var pausado = false, enHover = false, temporizador = null;
+    var INTERVALO = 3500; // avanza una tarjeta cada 3,5 s
+
+    function porVista() {
+        var ancho = slides[0].getBoundingClientRect().width || 1;
+        return Math.max(1, Math.floor(vista.clientWidth / ancho + 0.05));
+    }
+    function paso() {
+        var a = slides[0].getBoundingClientRect(), b = slides[1] && slides[1].getBoundingClientRect();
+        return b ? b.left - a.left : a.width;
+    }
+    function construirPuntos() {
+        paginas = Math.max(1, Math.ceil(slides.length / porVista()));
+        cont.innerHTML = '';
+        puntos = [];
+        for (var i = 0; i < paginas; i++) {
+            var p = document.createElement('button');
+            p.type = 'button';
+            p.className = 'carrusel-punto';
+            p.setAttribute('aria-label', 'Ir al grupo ' + (i + 1) + ' de ' + paginas);
+            (function (n) { p.addEventListener('click', function () { ir(n, true); }); })(i);
+            cont.appendChild(p);
+            puntos.push(p);
+        }
+        cont.style.display = paginas > 1 ? '' : 'none';
+        actualizar();
+    }
+    function actualizar() {
+        var max = vista.scrollWidth - vista.clientWidth;
+        var alFinal = vista.scrollLeft >= max - 2;
+        pagina = alFinal ? paginas - 1 : Math.min(paginas - 1, Math.round(vista.scrollLeft / (paso() * porVista())));
+        puntos.forEach(function (p, i) {
+            if (i === pagina) p.setAttribute('aria-current', 'true'); else p.removeAttribute('aria-current');
+        });
+        prev.disabled = vista.scrollLeft <= 2;
+        next.disabled = alFinal;
+    }
+    function ir(n, manual) {
+        n = Math.max(0, Math.min(paginas - 1, n));
+        vista.scrollTo({ left: n * paso() * porVista(), behavior: reducido ? 'auto' : 'smooth' });
+        if (manual) reiniciar();
+    }
+    function siguiente(manual) {
+        var max = vista.scrollWidth - vista.clientWidth;
+        if (vista.scrollLeft >= max - 2) ir(0, manual); else ir(pagina + 1, manual);
+    }
+    // Ciclo automático: avanza de a una tarjeta y vuelve al inicio al llegar al final
+    function avanzarUna() {
+        var max = vista.scrollWidth - vista.clientWidth;
+        if (max <= 2) return;
+        var destino = vista.scrollLeft >= max - 2 ? 0 : Math.min(max, vista.scrollLeft + paso());
+        vista.scrollTo({ left: destino, behavior: reducido ? 'auto' : 'smooth' });
+    }
+    function reiniciar() {
+        clearInterval(temporizador);
+        if (!pausado && !enHover && vista.scrollWidth > vista.clientWidth + 2) temporizador = setInterval(avanzarUna, INTERVALO);
+    }
+    function marcarPausa() {
+        btnPausa.textContent = pausado ? 'Reanudar' : 'Pausar';
+        btnPausa.setAttribute('aria-pressed', pausado ? 'true' : 'false');
+        vista.setAttribute('aria-live', pausado ? 'polite' : 'off');
+    }
+
+    prev.addEventListener('click', function () { ir(pagina - 1, true); });
+    next.addEventListener('click', function () { siguiente(true); });
+    btnPausa.addEventListener('click', function () { pausado = !pausado; marcarPausa(); reiniciar(); });
+    vista.addEventListener('scroll', function () { window.requestAnimationFrame(actualizar); }, { passive: true });
+    raiz.addEventListener('mouseenter', function () { enHover = true; reiniciar(); });
+    raiz.addEventListener('mouseleave', function () { enHover = false; reiniciar(); });
+    // Solo se pausa por foco si se navega con teclado (un clic con el mouse no debe detener el ciclo)
+    raiz.addEventListener('focusin', function (e) {
+        if (e.target.matches && e.target.matches(':focus-visible')) { enHover = true; reiniciar(); }
+    });
+    raiz.addEventListener('focusout', function () { enHover = false; reiniciar(); });
+    raiz.addEventListener('touchstart', function () { clearInterval(temporizador); }, { passive: true });
+    raiz.addEventListener('touchend', function () { setTimeout(reiniciar, 4000); }, { passive: true });
+    vista.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight') { e.preventDefault(); ir(pagina + 1, true); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); ir(pagina - 1, true); }
+    });
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) clearInterval(temporizador); else reiniciar();
+    });
+    window.addEventListener('resize', construirPuntos);
+
+    construirPuntos();
+    marcarPausa();
+    reiniciar();
+})();
+</script>
 {% endblock %}

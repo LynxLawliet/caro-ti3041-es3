@@ -1,15 +1,25 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import transaction
 from django.db.models import Avg, Count, Max, Min, Sum
+from django.core.mail import send_mail
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 
-from .forms import ProductoForm
-from .models import Categoria, ContenidoSitio, Pedido, Producto, RegistroAdministrativo
+from .forms import ConsultaClienteForm, ProductoForm, RespuestaConsultaForm
+from .models import (
+    Categoria,
+    ConsultaCliente,
+    ContenidoSitio,
+    Pedido,
+    Producto,
+    RegistroAdministrativo,
+)
 
 CATEGORIA_VISUAL = {
     "herramientas-manuales": "🔨",
@@ -84,8 +94,21 @@ def index(request):
             "icono": icono,
         })
 
+    # Carrusel: variedad de categorías (rotando una por categoría, máx. 8)
+    por_categoria = {}
+    for producto in productos:
+        por_categoria.setdefault(producto['categoria'].strip(), []).append(producto)
+    carrusel = []
+    ronda = 0
+    while len(carrusel) < 8 and any(len(lista_cat) > ronda for lista_cat in por_categoria.values()):
+        for lista_cat in por_categoria.values():
+            if len(lista_cat) > ronda and len(carrusel) < 8:
+                carrusel.append(lista_cat[ronda])
+        ronda += 1
+
     contexto = {
         'productos_destacados': destacados,
+        'productos_carrusel': carrusel,
         'categorias': categorias,
         'total_productos': len(productos),
     }
@@ -276,9 +299,16 @@ def admin_landing(request):
         for producto in Producto.objects.select_related('categoria').order_by('pk')
     ]
     contenido = cargar_contenido()
+    kpis = {
+        'total_productos': len(productos),
+        'total_criticos': sum(1 for p in productos if p['stock'] <= 5),
+        'total_agotados': sum(1 for p in productos if p['stock'] == 0),
+        'total_visibles': sum(1 for p in productos if p.get('visible')),
+    }
     return render(request, 'catalogo/admin_landing.html', {
         'productos': productos,
         'contenido': contenido,
+        'kpis': kpis,
     })
 
 def detalle(request, producto_id):
@@ -286,6 +316,14 @@ def detalle(request, producto_id):
     producto = next((p for p in productos if p['id'] == producto_id), None)
     if not producto:
         raise Http404("Producto no encontrado en la ferretería")
+
+    # Registrar en sesión los últimos 3 productos visualizados
+    ultimos_vistos = request.session.get('ultimos_vistos', [])
+    if producto_id in ultimos_vistos:
+        ultimos_vistos.remove(producto_id)
+    ultimos_vistos.insert(0, producto_id)
+    request.session['ultimos_vistos'] = ultimos_vistos[:3]
+    request.session.modified = True
 
     return render(request, 'catalogo/detalle.html', {'producto': producto})
 
@@ -442,23 +480,37 @@ def login(request):
 
 
 def registro(request):
+    valores = {}
     if request.method == 'POST':
         usuario = request.POST.get('usuario', '').strip()
+        correo = request.POST.get('correo', '').strip()
         contrasena = request.POST.get('contrasena', '')
         confirmacion = request.POST.get('confirmacion', '')
+        valores = {'usuario': usuario, 'correo': correo}
+        correo_valido = True
+        if correo:
+            try:
+                validate_email(correo)
+            except ValidationError:
+                correo_valido = False
         if not usuario or not contrasena:
             messages.error(request, 'Completa el usuario y la contraseña.')
+        elif not correo:
+            messages.error(request, 'Ingresa tu correo electrónico.')
+        elif not correo_valido:
+            messages.error(request, 'Ingresa un correo electrónico válido (ej. nombre@correo.cl).')
         elif contrasena != confirmacion:
             messages.error(request, 'Las contraseñas no coinciden.')
         else:
             request.session['usuario_registrado'] = {
                 'usuario': usuario,
+                'correo': correo,
                 'contrasena': contrasena,
             }
             request.session['usuario_ficticio'] = usuario
             messages.success(request, f'Cuenta simulada creada para {usuario}.')
             return redirect(request.POST.get('next') or 'lista')
-    return render(request, 'catalogo/login.html', {'modo': 'registro'})
+    return render(request, 'catalogo/login.html', {'modo': 'registro', 'valores': valores})
 
 
 def logout(request):
@@ -568,11 +620,21 @@ def checkout(request):
     return render(request, 'catalogo/checkout.html', {'items_carrito': items, 'total_carrito': total})
 
 
+def _es_administrador(request):
+    """Verifica si el usuario actual posee permisos de staff/administrador."""
+    return getattr(request.user, 'is_authenticated', False) and getattr(request.user, 'is_staff', False)
+
+
 def crear_producto(request):
     """
     Vista para crear un nuevo registro instanciando el formulario vacío.
+    Restringida exclusivamente a usuarios con rol de administrador (staff).
     Tras guardarse exitosamente con POST, redirige a la vista del listado principal.
     """
+    if not _es_administrador(request):
+        messages.error(request, 'Acceso restringido: Se requieren permisos de administrador para agregar productos.')
+        return redirect('lista')
+
     if request.method == 'POST':
         form = ProductoForm(request.POST)
         if form.is_valid():
@@ -597,8 +659,13 @@ def editar_producto(request, id):
     """
     Vista para editar un registro existente pasando la instancia específica
     (identificada por su ID) al formulario.
+    Restringida exclusivamente a usuarios con rol de administrador (staff).
     Tras guardarse exitosamente con POST, redirige a la vista del listado principal.
     """
+    if not _es_administrador(request):
+        messages.error(request, 'Acceso restringido: Se requieren permisos de administrador para editar productos.')
+        return redirect('lista')
+
     producto = get_object_or_404(Producto, pk=id)
     if request.method == 'POST':
         form = ProductoForm(request.POST, instance=producto)
@@ -624,8 +691,13 @@ def editar_producto(request, id):
 def eliminar_producto(request, id):
     """
     Vista para eliminar el objeto de la base de datos previa confirmación.
+    Restringida exclusivamente a usuarios con rol de administrador (staff).
     Tras confirmarse exitosamente con POST, redirige a la vista del listado principal.
     """
+    if not _es_administrador(request):
+        messages.error(request, 'Acceso restringido: Se requieren permisos de administrador para eliminar productos.')
+        return redirect('lista')
+
     producto = get_object_or_404(Producto, pk=id)
     if request.method == 'POST':
         nombre = producto.nombre
@@ -648,10 +720,15 @@ def eliminar_producto(request, id):
 def reporte_resumen(request):
     """
     Vista del Reporte 1 (Agrupación):
+    Restringida exclusivamente a administradores.
     Agrupa los productos por categoría utilizando annotate de Django para calcular
     la cantidad de registros (Count), el promedio de precios (Avg) y la suma total de stock (Sum).
     Adicionalmente, utiliza aggregate para computar métricas consolidadas globales de todo el inventario.
     """
+    if not _es_administrador(request):
+        messages.error(request, 'Acceso restringido: Los reportes son de uso exclusivo para administradores.')
+        return redirect('lista')
+
     categorias_reporte = Categoria.objects.annotate(
         total_productos=Count('productos'),
         promedio_precio=Avg('productos__precio'),
@@ -681,11 +758,16 @@ def reporte_resumen(request):
 def reporte_critico(request):
     """
     Vista del Reporte 2 (Filtrado):
+    Restringida exclusivamente a administradores.
     Genera un listado de productos que cumplen una condición crítica de inventario
     (stock bajo o agotado). Aplica obligatoriamente los métodos filter y order_by del ORM
     para filtrar los productos por el umbral de stock y ordenarlos prioritariamente por
     stock ascendente y nombre.
     """
+    if not _es_administrador(request):
+        messages.error(request, 'Acceso restringido: El reporte de stock crítico es de uso exclusivo para administradores.')
+        return redirect('lista')
+
     try:
         umbral = int(request.GET.get('umbral', 5))
         if umbral < 0:
@@ -715,3 +797,135 @@ def reporte_critico(request):
     return render(request, 'catalogo/reporte_critico.html', contexto)
 
 
+def contacto(request):
+    """
+    Vista para canalizar consultas y cotizaciones de clientes.
+    Procesa ConsultaClienteForm vía POST, guarda en la base de datos y
+    administra el contador de visitas a la sección mediante request.session.
+    """
+    # Funcionalidad de request.session: contador de visitas a la vista de contacto
+    visitas = request.session.get('contador_visitas_contacto', 0) + 1
+    request.session['contador_visitas_contacto'] = visitas
+    request.session.modified = True
+
+    # Recuperar los últimos productos visualizados guardados en sesión
+    ultimos_vistos_ids = request.session.get('ultimos_vistos', [])
+    ultimos_vistos = Producto.objects.filter(pk__in=ultimos_vistos_ids, visible=True)
+
+    if request.method == 'POST':
+        form = ConsultaClienteForm(request.POST)
+        if form.is_valid():
+            consulta = form.save()
+            messages.success(
+                request,
+                f'¡Gracias por contactarnos, {consulta.nombre}! Tu consulta ha sido enviada exitosamente. '
+                'Un asesor técnico de Ferretería Caro-Kahn responderá a tu correo a la brevedad.',
+            )
+            return redirect('contacto')
+        else:
+            messages.error(request, 'Por favor corrige los errores señalados a continuación en el formulario.')
+    else:
+        # Preseleccionar producto de interés si viene en el parámetro ?producto=ID
+        initial_data = {}
+        producto_id = request.GET.get('producto')
+        if producto_id:
+            try:
+                initial_data['producto_interes'] = int(producto_id)
+            except (ValueError, TypeError):
+                pass
+        form = ConsultaClienteForm(initial=initial_data)
+
+    contexto = {
+        'form': form,
+        'visitas': visitas,
+        'ultimos_vistos': ultimos_vistos,
+        'titulo_pagina': 'Contacto y Asesoría Técnica',
+        'subtitulo_pagina': 'Envíanos tus consultas técnicas, solicitudes de cotización o requerimientos de materiales.',
+        'contenido': cargar_contenido(),
+    }
+    return render(request, 'catalogo/contacto.html', contexto)
+
+
+def admin_consultas(request):
+    """Bandeja de consultas técnicas de clientes, solo para administradores."""
+    if not _es_administrador(request):
+        messages.error(request, 'Debes iniciar sesión con una cuenta administradora.')
+        return redirect(f"{reverse('login')}?next={reverse('admin_consultas')}")
+
+    estado = request.GET.get('estado', 'pendientes')
+    consultas = ConsultaCliente.objects.select_related('producto_interes', 'respondida_por')
+    total_pendientes = consultas.filter(respondida_en__isnull=True).count()
+    total_respondidas = consultas.filter(respondida_en__isnull=False).count()
+    if estado == 'respondidas':
+        consultas = consultas.filter(respondida_en__isnull=False)
+    elif estado == 'todas':
+        pass
+    else:
+        estado = 'pendientes'
+        consultas = consultas.filter(respondida_en__isnull=True)
+
+    contexto = {
+        'consultas': consultas,
+        'estado': estado,
+        'total_pendientes': total_pendientes,
+        'total_respondidas': total_respondidas,
+        'total_todas': total_pendientes + total_respondidas,
+        'contenido': cargar_contenido(),
+    }
+    return render(request, 'catalogo/admin_consultas.html', contexto)
+
+
+def responder_consulta(request, id):
+    """Permite al administrador responder una consulta; guarda y envía la respuesta por correo."""
+    if not _es_administrador(request):
+        messages.error(request, 'Debes iniciar sesión con una cuenta administradora.')
+        return redirect(f"{reverse('login')}?next={reverse('admin_consultas')}")
+
+    consulta = get_object_or_404(ConsultaCliente.objects.select_related('producto_interes'), pk=id)
+
+    if request.method == 'POST':
+        form = RespuestaConsultaForm(request.POST)
+        if form.is_valid():
+            texto = form.cleaned_data['respuesta'].strip()
+            consulta.respuesta = texto
+            consulta.respondida_en = timezone.now()
+            consulta.respondida_por = request.user
+            consulta.save(update_fields=['respuesta', 'respondida_en', 'respondida_por'])
+            RegistroAdministrativo.registrar(
+                usuario=request.user,
+                accion=RegistroAdministrativo.Accion.ACTUALIZACION,
+                modelo="ConsultaCliente",
+                objeto_id=consulta.pk,
+                resumen=f"Se respondió la consulta de {consulta.nombre} ({consulta.correo}).",
+            )
+            marca = cargar_contenido().get('marca', 'Ferretería Caro-Kahn')
+            cuerpo = (
+                f"Hola {consulta.nombre},\n\n{texto}\n\n"
+                f"--- Tu consulta original ---\n{consulta.mensaje}\n\n"
+                f"Saludos cordiales,\nEquipo técnico de {marca}"
+            )
+            try:
+                send_mail(
+                    subject=f"Respuesta a tu consulta técnica — {marca}",
+                    message=cuerpo,
+                    from_email=None,
+                    recipient_list=[consulta.correo],
+                )
+                messages.success(request, f'Respuesta enviada a {consulta.correo}.')
+            except Exception:
+                messages.warning(
+                    request,
+                    'La respuesta quedó guardada, pero no se pudo enviar el correo. '
+                    'Revisa la configuración de correo o contacta al cliente manualmente.',
+                )
+            return redirect('admin_consultas')
+        messages.error(request, 'Escribe una respuesta de al menos 10 caracteres.')
+    else:
+        form = RespuestaConsultaForm()
+
+    contexto = {
+        'consulta': consulta,
+        'form': form,
+        'contenido': cargar_contenido(),
+    }
+    return render(request, 'catalogo/responder_consulta.html', contexto)

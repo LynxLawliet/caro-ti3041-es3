@@ -1,0 +1,69 @@
+{% extends 'catalogo/base.html' %}
+{% load static %}
+
+{% block title %}Consultas técnicas | {{ contenido.marca }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'catalogo/css/admin.css' %}?v=2.4">
+{% endblock %}
+
+{% block content %}
+    <section class="admin-shell" aria-labelledby="titulo-consultas">
+        <div class="admin-heading">
+            <div class="admin-heading-copy">
+                <p class="admin-overline"><span aria-hidden="true"></span> Atención a clientes</p>
+                <h1 id="titulo-consultas">Consultas técnicas</h1>
+                <p class="bajada">Revisa las consultas enviadas desde el formulario de contacto y respóndelas por correo.</p>
+            </div>
+            <span class="admin-session"><span aria-hidden="true">●</span> {{ total_pendientes }} pendiente{{ total_pendientes|pluralize }}</span>
+        </div>
+
+        <nav class="consultas-filtros" aria-label="Filtrar consultas">
+            <a href="?estado=pendientes" class="consultas-filtro {% if estado == 'pendientes' %}is-activo{% endif %}" {% if estado == 'pendientes' %}aria-current="page"{% endif %}>Pendientes <span>{{ total_pendientes }}</span></a>
+            <a href="?estado=respondidas" class="consultas-filtro {% if estado == 'respondidas' %}is-activo{% endif %}" {% if estado == 'respondidas' %}aria-current="page"{% endif %}>Respondidas <span>{{ total_respondidas }}</span></a>
+            <a href="?estado=todas" class="consultas-filtro {% if estado == 'todas' %}is-activo{% endif %}" {% if estado == 'todas' %}aria-current="page"{% endif %}>Todas <span>{{ total_todas }}</span></a>
+        </nav>
+
+        <div class="consultas-lista">
+            {% for consulta in consultas %}
+                <article class="consulta-card {% if consulta.respondida %}consulta-card--respondida{% endif %}">
+                    <header class="consulta-card__cabecera">
+                        <div>
+                            <h2>{{ consulta.nombre }}</h2>
+                            <a href="mailto:{{ consulta.correo }}">{{ consulta.correo }}</a>
+                        </div>
+                        <div class="consulta-card__meta">
+                            <span class="consulta-estado {% if consulta.respondida %}consulta-estado--ok{% else %}consulta-estado--pendiente{% endif %}">
+                                {% if consulta.respondida %}Respondida{% else %}Pendiente{% endif %}
+                            </span>
+                            <time datetime="{{ consulta.fecha|date:'c' }}">{{ consulta.fecha|date:"d/m/Y H:i" }}</time>
+                        </div>
+                    </header>
+
+                    {% if consulta.producto_interes %}
+                        <p class="consulta-card__producto">Producto de interés: <strong>{{ consulta.producto_interes.nombre }}</strong></p>
+                    {% endif %}
+
+                    <p class="consulta-card__mensaje">{{ consulta.mensaje|linebreaksbr }}</p>
+
+                    {% if consulta.respondida %}
+                        <div class="consulta-card__respuesta">
+                            <strong>Tu respuesta{% if consulta.respondida_por %} ({{ consulta.respondida_por.username }}){% endif %} · {{ consulta.respondida_en|date:"d/m/Y H:i" }}</strong>
+                            <p>{{ consulta.respuesta|linebreaksbr }}</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="consulta-card__acciones">
+                        <a class="boton-detalle consulta-boton" href="{% url 'responder_consulta' consulta.pk %}">
+                            {% if consulta.respondida %}Responder de nuevo{% else %}Responder consulta{% endif %} <span aria-hidden="true">→</span>
+                        </a>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="estado-vacio">
+                    {% if estado == 'pendientes' %}No hay consultas pendientes. ¡Todo al día!{% else %}No hay consultas en esta vista.{% endif %}
+                </p>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}

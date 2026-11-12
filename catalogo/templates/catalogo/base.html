@@ -6,64 +6,170 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#20292d">
     <title>{% block title %}{{ contenido.marca }} | Catálogo y Cotizaciones{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'catalogo/css/base.css' %}?v=2.1">
+    <link rel="stylesheet" href="{% static 'catalogo/css/base.css' %}?v=2.4">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <header class="site-header">
+    <header class="site-header {% if es_area_admin %}site-header--admin{% endif %}">
         <div class="contenedor">
-            <nav class="navbar" aria-label="Navegación principal">
-                <a href="{% url 'inicio' %}" class="marca header__brand">
-                    <span class="marca-icono header__mark" aria-hidden="true">CK</span>
-                    <span>{{ contenido.marca }}</span>
-                </a>
+            <div class="navbar">
+                {% if es_area_admin %}
+                    <!-- Modo Administrativo: Izquierda -->
+                    <div class="header__brand-group">
+                        <a href="{% url 'admin_landing' %}" class="marca header__brand">
+                            <span class="marca-icono header__mark" aria-hidden="true">CK</span>
+                            <span>{{ contenido.marca }}</span>
+                        </a>
+                        <span class="header__badge-admin" title="Modo de gestión administrativa">Administración</span>
+                    </div>
 
-                <nav class="header__nav" aria-label="Secciones del sitio">
-                    <a href="{% url 'inicio' %}">Inicio</a>
-                    <a href="{% url 'lista' %}">Catálogo</a>
-                    <a href="{% url 'reporte_resumen' %}">Reporte Resumen</a>
-                    <a href="{% url 'reporte_critico' %}">Stock Crítico</a>
-                    <a href="{% url 'inicio' %}#categorias">Categorías</a>
-                    <a href="{% url 'inicio' %}#beneficios">Servicios</a>
-                </nav>
+                    <!-- Modo Administrativo: Centro (Gestión de la ferretería) -->
+                    <nav class="header__nav header__nav--admin" id="menu-principal" aria-label="Navegación administrativa">
+                        <a href="{% url 'admin_landing' %}" class="nav-link {% if url_actual == 'admin_landing' %}nav-link--active{% endif %}" {% if url_actual == 'admin_landing' %}aria-current="page"{% endif %}>Resumen</a>
+                        <a href="{% url 'lista' %}" class="nav-link {% if url_actual == 'lista' %}nav-link--active{% endif %}" {% if url_actual == 'lista' %}aria-current="page"{% endif %}>Productos</a>
+                        <a href="{% url 'reporte_critico' %}" class="nav-link {% if url_actual == 'reporte_critico' %}nav-link--active{% endif %}" {% if url_actual == 'reporte_critico' %}aria-current="page"{% endif %}>Stock Crítico</a>
+                        <a href="{% url 'reporte_resumen' %}" class="nav-link {% if url_actual == 'reporte_resumen' %}nav-link--active{% endif %}" {% if url_actual == 'reporte_resumen' %}aria-current="page"{% endif %}>Reportes</a>
+                        <a href="{% url 'admin_consultas' %}" class="nav-link {% if url_actual == 'admin_consultas' or url_actual == 'responder_consulta' %}nav-link--active{% endif %}" {% if url_actual == 'admin_consultas' or url_actual == 'responder_consulta' %}aria-current="page"{% endif %}>Consultas{% if consultas_pendientes %} <span class="nav-badge" aria-label="{{ consultas_pendientes }} pendientes">{{ consultas_pendientes }}</span>{% endif %}</a>
+                        <a href="{% url 'admin_landing' %}#contenido-admin" class="nav-link">Contenido</a>
+                    </nav>
 
-                <form class="buscador header__search" action="{% url 'lista' %}#catalogo" method="get" role="search">
-                    <label class="visually-hidden" for="buscar-productos">Buscar productos</label>
-                    <input id="buscar-productos" name="q" type="search" value="{{ busqueda|default:'' }}" placeholder="Buscar herramientas o materiales...">
-                    <button class="boton-busqueda" type="submit" aria-label="Buscar en el catálogo">
-                        <span aria-hidden="true">⌕</span>
-                    </button>
-                </form>
+                    <!-- Modo Administrativo: Derecha -->
+                    <div class="nav-links header__actions">
+                        <a href="{% url 'inicio' %}" class="button button--outline-light button--small" title="Volver a la tienda pública">
+                            <span aria-hidden="true">↗</span> Ver tienda
+                        </a>
+                        <details class="user-menu">
+                            <summary class="user-menu__trigger" aria-label="Menú del usuario administrador">
+                                <span class="user-menu__avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
+                                <span class="user-menu__name">{{ request.user.username }}</span>
+                                <span class="user-menu__caret" aria-hidden="true">▾</span>
+                            </summary>
+                            <div class="user-menu__dropdown">
+                                <div class="user-menu__header">
+                                    <strong>{{ request.user.username }}</strong>
+                                    <span>Administrador</span>
+                                </div>
+                                <a href="{% url 'admin_landing' %}">Panel de control</a>
+                                <a href="{% url 'reporte_resumen' %}">Reporte por categoría</a>
+                                <a href="{% url 'reporte_critico' %}">Stock crítico</a>
+                                <a href="{% url 'admin_consultas' %}">Consultas técnicas{% if consultas_pendientes %} ({{ consultas_pendientes }}){% endif %}</a>
+                                <a href="{% url 'lista' %}">Catálogo de productos</a>
+                                <a href="/admin/">Django Admin</a>
+                                <hr>
+                                <a href="{% url 'logout' %}" class="user-menu__logout">Cerrar sesión</a>
+                            </div>
+                        </details>
+                        <button type="button" class="nav-toggle" aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menú de navegación">
+                            <span class="nav-toggle__bar" aria-hidden="true"></span>
+                            <span class="nav-toggle__bar" aria-hidden="true"></span>
+                            <span class="nav-toggle__bar" aria-hidden="true"></span>
+                        </button>
+                    </div>
 
-                <div class="nav-links header__actions">
-                    <a href="{% url 'carrito' %}" class="cart-link" title="Ver carrito y cotización temporal">
-                        <span>Carrito / Cotización</span>
-                        <span class="contador-carrito cart-link__count">{{ request.session.carrito|length|default:0 }}</span>
+                {% else %}
+                    <!-- Modo Público / Clientes: Izquierda -->
+                    <a href="{% url 'inicio' %}" class="marca header__brand">
+                        <span class="marca-icono header__mark" aria-hidden="true">CK</span>
+                        <span>{{ contenido.marca }}</span>
                     </a>
-                    {% if request.user.is_authenticated and request.user.is_staff %}
-                        <a href="{% url 'admin_landing' %}" class="btn-acento button button--primary button--small">Administración</a>
-                    {% endif %}
-                    {% if request.session.usuario_ficticio %}
-                        <span class="saludo-usuario">Hola, {{ request.session.usuario_ficticio }}</span>
-                        <a href="{% url 'logout' %}" class="button button--secondary button--small">Salir</a>
-                    {% else %}
-                        <a href="{% url 'login' %}">Iniciar sesión</a>
-                        <a href="{% url 'registro' %}" class="btn-acento button button--primary button--small">Registrarse</a>
-                    {% endif %}
-                </div>
-            </nav>
+
+                    <!-- Modo Público: Centro (Orientado exclusivamente a clientes) -->
+                    <nav class="header__nav header__nav--public" id="menu-principal" aria-label="Navegación principal">
+                        <a href="{% url 'inicio' %}" class="nav-link {% if url_actual == 'inicio' %}nav-link--active{% endif %}" {% if url_actual == 'inicio' %}aria-current="page"{% endif %}>Inicio</a>
+                        <a href="{% url 'lista' %}" class="nav-link {% if url_actual == 'lista' %}nav-link--active{% endif %}" {% if url_actual == 'lista' %}aria-current="page"{% endif %}>Catálogo</a>
+                        <a href="{% url 'inicio' %}#categorias" class="nav-link">Categorías</a>
+                        <a href="{% url 'inicio' %}#beneficios" class="nav-link">Servicios</a>
+                        <a href="{% url 'contacto' %}" class="nav-link {% if url_actual == 'contacto' %}nav-link--active{% endif %}" {% if url_actual == 'contacto' %}aria-current="page"{% endif %}>Contacto</a>
+                    </nav>
+
+                    <!-- Modo Público: Derecha (Buscador, Cotización y Acceso) -->
+                    <form class="buscador header__search header-search" action="{% url 'lista' %}#catalogo" method="get" role="search">
+                        <label class="visually-hidden" for="buscar-productos">Buscar productos</label>
+                        <input id="buscar-productos" name="q" type="search" value="{{ busqueda|default:'' }}" placeholder="Buscar herramientas o materiales...">
+                        <button class="boton-busqueda" type="submit" aria-label="Buscar en el catálogo">
+                            <span aria-hidden="true">⌕</span>
+                        </button>
+                    </form>
+
+                    <div class="nav-links header__actions">
+                        <a href="{% url 'carrito' %}" class="cart-link header-action" title="Ver cotización de materiales">
+                            <span class="cart-link__text">Cotización</span>
+                            <span class="contador-carrito header-badge cart-link__count">{{ request.session.carrito|length|default:0 }}</span>
+                        </a>
+
+                        {% if es_admin %}
+                            <a href="{% url 'admin_landing' %}" class="btn-acento button button--primary button--small">Administración</a>
+                        {% endif %}
+
+                        {% if request.user.is_authenticated %}
+                            <details class="user-menu">
+                                <summary class="user-menu__trigger" aria-label="Menú del usuario">
+                                    <span class="user-menu__avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
+                                    <span class="user-menu__name">{{ request.user.username }}</span>
+                                    <span class="user-menu__caret" aria-hidden="true">▾</span>
+                                </summary>
+                                <div class="user-menu__dropdown">
+                                    <div class="user-menu__header">
+                                        <strong>{{ request.user.username }}</strong>
+                                        <span>{% if es_admin %}Administrador{% else %}Cliente{% endif %}</span>
+                                    </div>
+                                    {% if es_admin %}
+                                        <a href="{% url 'admin_landing' %}">Panel de administración</a>
+                                        <a href="{% url 'reporte_resumen' %}">Reporte por categoría</a>
+                                        <a href="{% url 'reporte_critico' %}">Stock crítico</a>
+                                        <a href="{% url 'admin_consultas' %}">Consultas técnicas{% if consultas_pendientes %} ({{ consultas_pendientes }}){% endif %}</a>
+                                        <hr>
+                                    {% endif %}
+                                    <a href="{% url 'carrito' %}">Mi cotización</a>
+                                    <a href="{% url 'contacto' %}">Atención técnica</a>
+                                    <hr>
+                                    <a href="{% url 'logout' %}" class="user-menu__logout">Cerrar sesión</a>
+                                </div>
+                            </details>
+                        {% elif request.session.usuario_ficticio %}
+                            <details class="user-menu">
+                                <summary class="user-menu__trigger" aria-label="Menú de cliente invitado">
+                                    <span class="user-menu__avatar" aria-hidden="true">{{ request.session.usuario_ficticio|first|upper }}</span>
+                                    <span class="user-menu__name">{{ request.session.usuario_ficticio }}</span>
+                                    <span class="user-menu__caret" aria-hidden="true">▾</span>
+                                </summary>
+                                <div class="user-menu__dropdown">
+                                    <div class="user-menu__header">
+                                        <strong>{{ request.session.usuario_ficticio }}</strong>
+                                        <span>Cliente invitado</span>
+                                    </div>
+                                    <a href="{% url 'carrito' %}">Mi cotización</a>
+                                    <a href="{% url 'contacto' %}">Atención técnica</a>
+                                    <hr>
+                                    <a href="{% url 'logout' %}" class="user-menu__logout">Salir</a>
+                                </div>
+                            </details>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="header-action header-action--login">Iniciar sesión</a>
+                            <a href="{% url 'registro' %}" class="btn-acento button button--primary button--small">Registrarse</a>
+                        {% endif %}
+                        <button type="button" class="nav-toggle" aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menú de navegación">
+                            <span class="nav-toggle__bar" aria-hidden="true"></span>
+                            <span class="nav-toggle__bar" aria-hidden="true"></span>
+                            <span class="nav-toggle__bar" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </header>
 
     <main>
         {% if messages %}
-            <div class="mensajes">
+            <div class="mensajes" aria-label="Notificaciones">
                 {% for message in messages %}
                     <div class="mensaje mensaje--{{ message.tags }}"
                          role="{% if 'error' in message.tags %}alert{% else %}status{% endif %}"
                          aria-live="{% if 'error' in message.tags %}assertive{% else %}polite{% endif %}"
-                         aria-atomic="true">
-                        {{ message }}
+                         aria-atomic="true"
+                         {% if 'error' not in message.tags %}data-autocierre="6000"{% endif %}>
+                        <span class="mensaje__texto">{{ message }}</span>
+                        <button type="button" class="mensaje__cerrar" aria-label="Cerrar notificación">&times;</button>
                     </div>
                 {% endfor %}
             </div>
@@ -83,12 +189,16 @@
                 <p class="footer-horario">Lunes a sábado · 08:00 a 18:00 hrs</p>
             </div>
             <div class="footer-col">
-                <h2>Catálogo y Reportes</h2>
+                <h2>Catálogo</h2>
                 <ul>
                     <li><a href="{% url 'lista' %}">Catálogo técnico</a></li>
-                    <li><a href="{% url 'reporte_resumen' %}">Reporte por categoría</a></li>
-                    <li><a href="{% url 'reporte_critico' %}">Reporte de stock crítico</a></li>
                     <li><a href="{% url 'inicio' %}#categorias">Categorías principales</a></li>
+                    <li><a href="{% url 'lista' %}?categoria=Herramientas+manuales#catalogo">Herramientas manuales</a></li>
+                    <li><a href="{% url 'lista' %}?categoria=Seguridad+industrial#catalogo">Seguridad industrial</a></li>
+                    {% if es_admin %}
+                        <li><a href="{% url 'reporte_resumen' %}">Reporte por categoría</a></li>
+                        <li><a href="{% url 'reporte_critico' %}">Reporte de stock crítico</a></li>
+                    {% endif %}
                 </ul>
             </div>
             <div class="footer-col">
@@ -103,6 +213,7 @@
             <div class="footer-col">
                 <h2>Contacto</h2>
                 <ul>
+                    <li><a href="{% url 'contacto' %}">Formulario de contacto y asesoría</a></li>
                     <li><a href="mailto:contacto@carokahn.cl">contacto@carokahn.cl</a></li>
                     <li><a href="tel:+56221234567">+56 2 2123 4567</a></li>
                     <li>Av. Industrial 4520, Santiago</li>
@@ -115,5 +226,75 @@
             <a href="{% url 'lista' %}">Explorar catálogo técnico <span aria-hidden="true">↗</span></a>
         </div>
     </footer>
+    <script>
+    (function () {
+        var toggle = document.querySelector('.nav-toggle');
+        var menu = document.getElementById('menu-principal');
+        var header = document.querySelector('.site-header');
+
+        function setMenu(abierto) {
+            if (!toggle || !menu) return;
+            menu.classList.toggle('is-open', abierto);
+            toggle.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            toggle.setAttribute('aria-label', abierto ? 'Cerrar menú de navegación' : 'Abrir menú de navegación');
+        }
+        function cerrarUsuario(excepto) {
+            document.querySelectorAll('details.user-menu[open]').forEach(function (d) {
+                if (d !== excepto) d.removeAttribute('open');
+            });
+        }
+
+        if (toggle) {
+            toggle.addEventListener('click', function () {
+                setMenu(toggle.getAttribute('aria-expanded') !== 'true');
+            });
+        }
+        if (menu) {
+            menu.addEventListener('click', function (e) {
+                if (e.target.closest('a')) setMenu(false);
+            });
+        }
+        document.addEventListener('click', function (e) {
+            var detalle = e.target.closest('details.user-menu');
+            cerrarUsuario(detalle);
+            if (header && !header.contains(e.target)) setMenu(false);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            var abierto = document.querySelector('details.user-menu[open]');
+            if (abierto) {
+                abierto.removeAttribute('open');
+                var resumen = abierto.querySelector('summary');
+                if (resumen) resumen.focus();
+            }
+            if (toggle && toggle.getAttribute('aria-expanded') === 'true') {
+                setMenu(false);
+                toggle.focus();
+            }
+        });
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 768) setMenu(false);
+        });
+        /* Notificaciones: se miden bajo el encabezado, se cierran y se auto-ocultan */
+        function ajustarAvisos() {
+            if (header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+        }
+        function cerrarAviso(el) {
+            if (!el || el.classList.contains('is-saliendo')) return;
+            el.classList.add('is-saliendo');
+            setTimeout(function () { el.remove(); }, 220);
+        }
+        ajustarAvisos();
+        window.addEventListener('resize', ajustarAvisos);
+        document.querySelectorAll('.mensaje').forEach(function (el) {
+            var cerrar = el.querySelector('.mensaje__cerrar');
+            if (cerrar) cerrar.addEventListener('click', function () { cerrarAviso(el); });
+            var t = parseInt(el.getAttribute('data-autocierre'), 10);
+            if (t) setTimeout(function () { cerrarAviso(el); }, t);
+        });
+
+    })();
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

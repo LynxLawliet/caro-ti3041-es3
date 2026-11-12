@@ -63,6 +63,13 @@
     margin: 0;
 }
 
+.reporte-cabecera-acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .reporte-selector-tabs {
     display: inline-flex;
     background: var(--color-surface, #ffffff);
@@ -250,8 +257,12 @@
     vertical-align: middle;
 }
 
+.reporte-tabla tbody tr:nth-child(even) {
+    background-color: #fafbf9;
+}
+
 .reporte-tabla tbody tr:hover {
-    background-color: #f7f9f8;
+    background-color: #f2f5f4;
 }
 
 .reporte-tabla tfoot td {
@@ -326,5 +337,42 @@
     .filtro-umbral-card {
         flex-direction: column;
         align-items: flex-start;
+    }
+}
+
+/* Modo de impresión / Exportar informe */
+@media print {
+    .site-header,
+    .site-footer,
+    .reporte-migas,
+    .reporte-selector-tabs,
+    .filtro-umbral-card,
+    .reporte-cabecera-acciones button,
+    .col-centro,
+    .button {
+        display: none !important;
+    }
+
+    body,
+    .reporte-seccion {
+        background: #ffffff !important;
+        padding: 0 !important;
+    }
+
+    .reporte-contenedor {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .reporte-tabla-card {
+        box-shadow: none !important;
+        border: 1px solid #20292d !important;
+    }
+
+    .reporte-tabla th {
+        background-color: #20292d !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }

@@ -1,0 +1,56 @@
+{% extends 'catalogo/base.html' %}
+{% load static %}
+
+{% block title %}Responder consulta | {{ contenido.marca }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'catalogo/css/admin.css' %}?v=2.4">
+{% endblock %}
+
+{% block content %}
+    <section class="admin-shell consulta-responder" aria-labelledby="titulo-responder">
+        <p class="consulta-volver"><a href="{% url 'admin_consultas' %}">← Volver a consultas</a></p>
+
+        <div class="admin-heading">
+            <div class="admin-heading-copy">
+                <p class="admin-overline"><span aria-hidden="true"></span> Atención a clientes</p>
+                <h1 id="titulo-responder">Responder consulta</h1>
+                <p class="bajada">La respuesta se enviará a <strong>{{ consulta.correo }}</strong>.</p>
+            </div>
+        </div>
+
+        <article class="consulta-card">
+            <header class="consulta-card__cabecera">
+                <div>
+                    <h2>{{ consulta.nombre }}</h2>
+                    <a href="mailto:{{ consulta.correo }}">{{ consulta.correo }}</a>
+                </div>
+                <div class="consulta-card__meta">
+                    <time datetime="{{ consulta.fecha|date:'c' }}">{{ consulta.fecha|date:"d/m/Y H:i" }}</time>
+                </div>
+            </header>
+            {% if consulta.producto_interes %}
+                <p class="consulta-card__producto">Producto de interés: <strong>{{ consulta.producto_interes.nombre }}</strong></p>
+            {% endif %}
+            <p class="consulta-card__mensaje">{{ consulta.mensaje|linebreaksbr }}</p>
+            {% if consulta.respondida %}
+                <div class="consulta-card__respuesta">
+                    <strong>Respuesta anterior · {{ consulta.respondida_en|date:"d/m/Y H:i" }}</strong>
+                    <p>{{ consulta.respuesta|linebreaksbr }}</p>
+                </div>
+            {% endif %}
+        </article>
+
+        <form method="post" class="consulta-form" novalidate>
+            {% csrf_token %}
+            <label for="{{ form.respuesta.id_for_label }}">{{ form.respuesta.label }}</label>
+            {{ form.respuesta }}
+            {% if form.respuesta.help_text %}<p class="consulta-form__ayuda">{{ form.respuesta.help_text }}</p>{% endif %}
+            {% for error in form.respuesta.errors %}<p class="consulta-form__error" role="alert">{{ error }}</p>{% endfor %}
+            <div class="consulta-card__acciones">
+                <button type="submit" class="boton-detalle consulta-boton">Enviar respuesta <span aria-hidden="true">✉</span></button>
+                <a class="consulta-cancelar" href="{% url 'admin_consultas' %}">Cancelar</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

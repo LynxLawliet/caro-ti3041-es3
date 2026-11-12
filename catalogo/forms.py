@@ -1,5 +1,6 @@
 from django import forms
-from .models import Categoria, Producto
+from django.core.validators import validate_email
+from .models import Categoria, ConsultaCliente, Producto
 
 
 class ProductoForm(forms.ModelForm):
@@ -87,3 +88,90 @@ class ProductoForm(forms.ModelForm):
         if stock is None or stock < 0:
             raise forms.ValidationError('El stock no puede ser un valor negativo.')
         return stock
+
+
+class ConsultaClienteForm(forms.ModelForm):
+    """
+    Formulario vinculado a ConsultaCliente para canalizar dudas,
+    cotizaciones y requerimientos técnicos de los clientes.
+    """
+    class Meta:
+        model = ConsultaCliente
+        fields = [
+            'nombre',
+            'correo',
+            'producto_interes',
+            'mensaje',
+        ]
+        labels = {
+            'nombre': 'Nombre completo',
+            'correo': 'Correo electrónico',
+            'producto_interes': 'Producto de interés (opcional)',
+            'mensaje': 'Consulta o requerimiento técnico',
+        }
+        help_texts = {
+            'correo': 'Te responderemos a esta dirección de correo a la brevedad.',
+            'producto_interes': 'Selecciona el artículo si deseas consultar disponibilidad o ficha técnica.',
+            'mensaje': 'Describe tu duda o requerimiento técnico (mínimo 10 caracteres).',
+        }
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'campo-formulario',
+                'placeholder': 'Ej. Carlos Miranda Lagos',
+                'autocomplete': 'name',
+            }),
+            'correo': forms.EmailInput(attrs={
+                'class': 'campo-formulario',
+                'placeholder': 'ejemplo@correo.cl',
+                'autocomplete': 'email',
+            }),
+            'producto_interes': forms.Select(attrs={
+                'class': 'campo-formulario campo-select',
+            }),
+            'mensaje': forms.Textarea(attrs={
+                'class': 'campo-formulario campo-textarea',
+                'rows': 5,
+                'placeholder': 'Escribe aquí tu consulta o requerimiento técnico...',
+            }),
+        }
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get('nombre', '').strip()
+        if not nombre:
+            raise forms.ValidationError('El nombre no puede estar vacío.')
+        if len(nombre) < 3:
+            raise forms.ValidationError('El nombre debe tener al menos 3 caracteres.')
+        return nombre
+
+    def clean_correo(self):
+        correo = self.cleaned_data.get('correo', '').strip()
+        if not correo:
+            raise forms.ValidationError('El correo electrónico es obligatorio.')
+        try:
+            validate_email(correo)
+        except forms.ValidationError:
+            raise forms.ValidationError('Por favor ingresa un correo electrónico con formato válido.')
+        return correo
+
+    def clean_mensaje(self):
+        mensaje = self.cleaned_data.get('mensaje', '').strip()
+        if not mensaje:
+            raise forms.ValidationError('El mensaje no puede estar vacío.')
+        if len(mensaje) < 10:
+            raise forms.ValidationError('El mensaje debe contener al menos 10 caracteres para procesar tu solicitud.')
+        return mensaje
+
+
+class RespuestaConsultaForm(forms.Form):
+    """Respuesta del administrador a una consulta técnica de un cliente."""
+    respuesta = forms.CharField(
+        label='Respuesta al cliente',
+        min_length=10,
+        max_length=4000,
+        help_text='Se enviará al correo del cliente y quedará guardada en la consulta (mínimo 10 caracteres).',
+        widget=forms.Textarea(attrs={
+            'class': 'campo-formulario campo-textarea',
+            'rows': 8,
+            'placeholder': 'Escribe aquí la respuesta técnica...',
+        }),
+    )

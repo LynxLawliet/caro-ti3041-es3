@@ -177,6 +177,74 @@ Entregó la formulación de las consultas del ORM con Categoria.objects.annotate
 Qué se usó o modificó:
 Se implementaron íntegramente las consultas con annotate, aggregate, filter y order_by en views.py. Se enriqueció la experiencia visual creando una hoja de estilos modular (reportes.css) alineada a la paleta de colores institucional, se incorporó un selector dinámico de umbral de stock en el reporte crítico y se actualizaron los menús de navegación en base.html (tanto en el header como en el pie de página) para garantizar el acceso directo desde todo el sitio.
 
+Consulta 8:
+
+"Actúa como un desarrollador backend y frontend experto en Django. Necesito resolver tres requerimientos en el proyecto:
+
+1. Modelo y Formulario de Contacto:
+   - Crear el modelo 'ConsultaCliente' con campos obligatorios: nombre, correo y mensaje; producto_interes como ForeignKey opcional (blank=True, null=True) a Producto; y fecha con auto_now_add=True.
+   - Registrar ConsultaCliente en admin.py con list_display y filtros.
+   - Generar y aplicar las migraciones correspondientes.
+   - Crear 'ConsultaClienteForm' como ModelForm con validaciones que verifiquen campos obligatorios, formato válido de correo y un largo mínimo para el mensaje.
+   - Configurar la vista 'contacto' para procesar POST, guardar con form.save(), enviar mensajes de confirmación e implementar gestión de sesiones con request.session (contador de visitas y lista de últimos 3 productos visualizados).
+   - Renderizar el template 'contacto.html' con token {% csrf_token %} y validación de errores.
+
+2. Seguridad y Separación de Roles:
+   - Restringir las operaciones administrativas (creación, edición y eliminación de productos) verificando que el usuario tenga rol de administrador/staff. Redirigir a usuarios casuales o clientes con mensaje de error si intentan acceder.
+   - Ocultar los botones de administración ('+ Agregar nuevo producto', 'Editar' y 'Eliminar') en lista.html para usuarios no administradores.
+
+3. Escalado y Responsividad de la Interfaz:
+   - Corregir el desbordamiento horizontal en el encabezado (.navbar) y pie de página cuando la ventana se escala o hace zoom, aplicando flex-wrap, overflow-x: hidden y puntos de quiebre responsivos intermedios (1200px y 960px)."
+
+Respuesta de la IA:
+Proporcionó la definición de ConsultaCliente en models.py, su registro en admin.py, los comandos de migración, la clase ConsultaClienteForm en forms.py con métodos clean personalizados, la vista contacto en views.py con almacenamiento en request.session del contador de visitas y últimos 3 productos vistos en detalle, el template contacto.html con {% csrf_token %}, la lógica de control de acceso basada en request.user.is_staff en vistas y templates, y reglas de CSS para solventar el escalado responsivo en base.css.
+
+Qué se usó o modificó:
+Se implementaron íntegramente las validaciones y el almacenamiento del modelo en la base de datos tras ejecutar makemigrations y migrate. En cuanto a roles, se aplicó un filtro estricto con _es_administrador() en crear_producto, editar_producto y eliminar_producto para blindar el backend frente a usuarios no privilegiados, además de condicionar el renderizado en lista.html. Para el escalado, se ajustó el header con flex-wrap y se añadieron breakpoints a 1200px y 960px evitando barras de desplazamiento horizontal al redimensionar o aplicar zoom.
+
+Consulta 9:
+
+"Actúa como un desarrollador senior experto en UX/UI y arquitectura web en Django. Necesito refactorizar la barra de navegación del sitio para separar de forma tajante la experiencia del cliente y la del administrador, además de restringir por completo los módulos de Stock Crítico y Reportes al rol administrativo:
+
+1. Separación de Contextos de Navegación:
+   - Navegación Pública (Clientes): Solo debe mostrar enlaces orientados a clientes: Inicio, Catálogo, Categorías, Servicios y Contacto. En la zona derecha: Buscador estilizado, Cotización (con badge numérico discreto), e inicio de sesión / menú de usuario. Los módulos de Reportes y Stock Crítico NO deben ser visibles para usuarios casuales ni en el header ni en el footer.
+   - Navegación Administrativa (Gestión): Cuando el usuario con permisos de staff se encuentra en el área de administración (admin_landing, reportes, stock crítico, etc.), el header debe cambiar a modo de gestión: mostrar el badge 'Administración', enlaces a Resumen, Productos, Stock Crítico, Reportes y Contenido; y en la derecha un botón 'Ver tienda' para regresar a la tienda pública, junto al menú de perfil del administrador.
+2. Seguridad en Vistas:
+   - Proteger reporte_resumen y reporte_critico en views.py para que rechacen peticiones de usuarios sin rol staff, redirigiendo al catálogo con mensaje de error.
+3. Componentes y Estilos:
+   - Crear un menú de perfil de usuario desplegable con <details class='user-menu'> y summary.
+   - Consolidar la paleta con variables semánticas (--nav-background, --brand-yellow, etc.), línea inferior amarilla para elementos activos con [aria-current='page'], y buscador centrado y prominente."
+
+Respuesta de la IA:
+Propuso la arquitectura de doble navegación en base.html soportada por un context processor que evalúa el estado del usuario y la ruta actual, las reglas de bloqueo con _es_administrador() en views.py para reporte_resumen y reporte_critico, el componente de menú desplegable <details class='user-menu'>, y el bloque de estilos CSS estructurado con los tokens de diseño y los estados activos para [aria-current='page'].
+
+Qué se usó o modificó:
+Se actualizó catalogo/context_processors.py para inyectar es_admin y es_area_admin globalmente en todas las plantillas. Se refactorizó base.html y base.css para alternar automáticamente entre la barra pública y la administrativa. Se protegieron backend y frontend para ocultar y denegar de forma absoluta los reportes y el stock crítico a clientes y usuarios no autorizados, garantizando además que las 50 pruebas unitarias del proyecto pasen con un 100% de éxito.
+
+Consulta 10:
+
+"Actúa como un diseñador de interfaces y desarrollador Front End Senior en Django. Necesito aplicar mejoras visuales profundas y corregir detalles de interfaz en las vistas del administrador y la navegación global del sitio:
+
+1. Corrección de Contraste y Navegación:
+   - Corregir el distintivo 'Administración' (.header__badge-admin) en el encabezado administrativo para que tenga un alto contraste legible (fondo amarillo de seguridad #F9B313 con texto oscuro #20292D).
+   - Eliminar definitivamente los enlaces de gestión administrativa ('Reportes' y 'Stock Crítico') de la barra de navegación pública del catálogo para evitar sobrecarga y desbordamiento visual; estos módulos solo deben ser accesibles cuando se está en el modo de gestión administrativa o a través del menú de perfil del administrador.
+   - Corregir el menú desplegable del perfil (.user-menu__dropdown) para garantizar un fondo completamente sólido y oscuro (#20292D), bordes definidos, tipografía de alto contraste (#FFFFFF), efectos hover diferenciados (#2C373B) y alineación derecha que impida desbordamientos horizontales.
+
+2. Mejoras Visuales en el Panel de Administración (admin_landing.html y admin.css):
+   - Incorporar una grilla de tarjetas KPI ejecutivas en el dashboard administrativo para visualizar rápidamente el total de productos, alertas de stock crítico, quiebres de inventario (agotados) y módulos activos.
+   - Expandir la navegación modular del panel administrativo mediante tarjetas responsivas con enlaces a gestión de inventario, formulario rápido, ModelForm completo, stock crítico, reportes por categoría y contenido del sitio.
+   - Enriquecer la lista de productos administrativos con indicadores visuales de nivel de stock (badges para 'Agotado', 'Stock bajo' y 'Stock normal') y botones directos a la edición y eliminación con confirmación.
+
+3. Mejoras en Vistas de Reportes y Analíticas (reportes.css):
+   - Añadir acción de impresión oficial ('Imprimir reporte') con reglas CSS específicas para @media print que oculten encabezados y elementos interactivos para generar documentos limpios.
+   - Aplicar rayado alternado (zebra striping) en las tablas de resultados para optimizar la legibilidad en pantallas grandes."
+
+Respuesta de la IA:
+Proporcionó la reestructuración de clases CSS para el badge administrativo y el menú desplegable, las definiciones de tokens semánticos en base.css y admin.css, la inclusión de las tarjetas KPI en el panel de control alimentadas desde views.py, los badges de stock condicionales y la configuración de estilos de impresión profesional para los reportes.
+
+Qué se usó o modificó:
+Se implementaron los estilos de alto contraste en el badge de administración y el menú de usuario en base.css, eliminando la fuga de enlaces administrativos hacia la barra pública. En admin_landing.html y admin.css se integraron las métricas ejecutivas clave y los badges de stock por producto, conectando además el panel con las vistas de ModelForm y confirmación de eliminación. En reportes.css se añadieron las reglas para impresión y filas alternadas, verificando con 50 pruebas automatizadas que el sistema conserve total integridad y rendimiento.
+
 Conclusión:
 
 Durante el desarrollo de esta primera evaluación en los laboratorios de INACAP Sede Osorno, utilicé la Inteligencia Artificial principalmente como una herramienta para acelerar la escritura de código repetitivo y maquetar el diseño front-end. Le pedí generar los 40 registros en formato JSON porque inventar cada material de ferretería a mano habría consumido demasiado tiempo de la prueba. Esa respuesta me sirvió tal cual, permitiéndome enfocarme en la lógica de views.py. Por otro lado, al solicitar el diseño de la interfaz, la IA tendía a sobre-complicar el código sugiriendo el uso de Bootstrap o inventando funcionalidades fuera de alcance, como sistemas de carrito de compras o paneles de administración. Tuve que corregir exhaustivamente esas respuestas, eliminando todo el código sobrante para no romper la restricción de la evaluación, que exige trabajar sin base de datos. En este proceso aprendí que es vital aplicar un filtro crítico a las respuestas de la IA, asegurándome de extraer únicamente la herencia de plantillas, el bucle de iteración y el CSS puro que necesitaba para cumplir estrictamente con la mejora visual.
