@@ -21,6 +21,8 @@
                 <nav class="header__nav" aria-label="Secciones del sitio">
                     <a href="{% url 'inicio' %}">Inicio</a>
                     <a href="{% url 'lista' %}">Catálogo</a>
+                    <a href="{% url 'reporte_resumen' %}">Reporte Resumen</a>
+                    <a href="{% url 'reporte_critico' %}">Stock Crítico</a>
                     <a href="{% url 'inicio' %}#categorias">Categorías</a>
                     <a href="{% url 'inicio' %}#beneficios">Servicios</a>
                 </nav>
@@ -81,12 +83,12 @@
                 <p class="footer-horario">Lunes a sábado · 08:00 a 18:00 hrs</p>
             </div>
             <div class="footer-col">
-                <h2>Catálogo</h2>
+                <h2>Catálogo y Reportes</h2>
                 <ul>
                     <li><a href="{% url 'lista' %}">Catálogo técnico</a></li>
+                    <li><a href="{% url 'reporte_resumen' %}">Reporte por categoría</a></li>
+                    <li><a href="{% url 'reporte_critico' %}">Reporte de stock crítico</a></li>
                     <li><a href="{% url 'inicio' %}#categorias">Categorías principales</a></li>
-                    <li><a href="{% url 'lista' %}?categoria=Herramientas+manuales#catalogo">Herramientas manuales</a></li>
-                    <li><a href="{% url 'lista' %}?categoria=Seguridad+industrial#catalogo">Seguridad industrial</a></li>
                 </ul>
             </div>
             <div class="footer-col">

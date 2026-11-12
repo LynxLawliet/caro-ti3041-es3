@@ -1,0 +1,162 @@
+{% extends 'catalogo/base.html' %}
+{% load static %}
+
+{% block title %}Reporte de Stock Crítico y Alertas | {{ contenido.marca }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'catalogo/css/reportes.css' %}?v=1.0">
+{% endblock %}
+
+{% block content %}
+<section class="reporte-seccion">
+    <div class="reporte-contenedor">
+        <!-- Navegación secundaria / Migas de pan -->
+        <nav class="reporte-migas" aria-label="Migas de pan">
+            <a href="{% url 'inicio' %}">Inicio</a>
+            <span aria-hidden="true">/</span>
+            <a href="{% url 'lista' %}">Catálogo</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">Stock Crítico (Filtrado ORM)</span>
+        </nav>
+
+        <!-- Cabecera principal del reporte y selector de vista -->
+        <header class="reporte-cabecera">
+            <div class="reporte-titulos">
+                <h1>{{ titulo_reporte }}</h1>
+                <p>{{ subtitulo_reporte }}</p>
+            </div>
+            <nav class="reporte-selector-tabs" aria-label="Vistas de reporte">
+                <a href="{% url 'reporte_resumen' %}" class="reporte-tab-btn">
+                    <span aria-hidden="true">📊</span> Resumen por Categoría
+                </a>
+                <a href="{% url 'reporte_critico' %}" class="reporte-tab-btn activo" aria-current="page">
+                    <span aria-hidden="true">⚠️</span> Stock Crítico
+                </a>
+            </nav>
+        </header>
+
+        <!-- Tarjetas de métricas rápidas -->
+        <div class="metricas-grid">
+            <article class="metrica-card metrica-card--danger">
+                <span class="metrica-card__label">Alerta de compra</span>
+                <span class="metrica-card__valor">{{ total_criticos }}</span>
+                <span class="metrica-card__nota">Artículos con stock ≤ {{ umbral }} unidades</span>
+            </article>
+
+            <article class="metrica-card metrica-card--danger">
+                <span class="metrica-card__label">Productos agotados</span>
+                <span class="metrica-card__valor">{{ total_agotados }}</span>
+                <span class="metrica-card__nota">Stock en cero (quiebre de inventario)</span>
+            </article>
+
+            <article class="metrica-card">
+                <span class="metrica-card__label">Umbral aplicado</span>
+                <span class="metrica-card__valor">≤ {{ umbral }}</span>
+                <span class="metrica-card__nota">Condición resuelta con filter(stock__lte)</span>
+            </article>
+
+            <article class="metrica-card metrica-card--success">
+                <span class="metrica-card__label">Ordenamiento</span>
+                <span class="metrica-card__valor">Ascendente</span>
+                <span class="metrica-card__nota">Priorizado con order_by('stock', 'nombre')</span>
+            </article>
+        </div>
+
+        <!-- Barra de selección de umbral dinámico -->
+        <div class="filtro-umbral-card">
+            <form method="get" class="filtro-umbral-form">
+                <label for="select-umbral">Definir nivel de stock a monitorear:</label>
+                <select id="select-umbral" name="umbral" onchange="this.form.submit()">
+                    <option value="0" {% if umbral == 0 %}selected{% endif %}>Solo agotados (0 unidades)</option>
+                    <option value="3" {% if umbral == 3 %}selected{% endif %}>Crítico severo (≤ 3 unidades)</option>
+                    <option value="5" {% if umbral == 5 %}selected{% endif %}>Nivel de reposición recomendado (≤ 5 unidades)</option>
+                    <option value="10" {% if umbral == 10 %}selected{% endif %}>Alerta preventiva (≤ 10 unidades)</option>
+                    <option value="20" {% if umbral == 20 %}selected{% endif %}>Inventario bajo general (≤ 20 unidades)</option>
+                </select>
+                <button type="submit" class="button button--secondary button--small">Actualizar filtro</button>
+            </form>
+
+            <div>
+                <a href="{% url 'crear_producto' %}" class="button button--primary button--small">
+                    <span aria-hidden="true">+</span> Registrar nuevo producto
+                </a>
+            </div>
+        </div>
+
+        <!-- Tabla con iteración de productos filtrados mediante el ORM (filter & order_by) -->
+        <div class="reporte-tabla-card">
+            <div class="reporte-tabla-card__header">
+                <h2>Listado de Artículos Prioritarios para Reabastecimiento</h2>
+                <span>Orden: menor stock a mayor</span>
+            </div>
+
+            <div class="reporte-tabla-responsive">
+                <table class="reporte-tabla">
+                    <thead>
+                        <tr>
+                            <th class="col-centro">ID</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th class="col-numero">Precio ($CLP)</th>
+                            <th class="col-numero">Stock</th>
+                            <th class="col-centro">Estado</th>
+                            <th class="col-centro">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos_criticos %}
+                            <tr>
+                                <td class="col-centro">#{{ producto.id }}</td>
+                                <td>
+                                    <strong>
+                                        <a href="{% url 'detalle' producto.id %}" style="color: var(--color-ink); text-decoration: underline;">
+                                            {{ producto.nombre }}
+                                        </a>
+                                    </strong>
+                                </td>
+                                <td>{{ producto.categoria.nombre }}</td>
+                                <td class="col-numero">${{ producto.precio|floatformat:0 }}</td>
+                                <td class="col-numero">
+                                    <strong>{{ producto.stock }}</strong> unid.
+                                </td>
+                                <td class="col-centro">
+                                    {% if producto.stock == 0 %}
+                                        <span class="badge-estado badge-estado--agotado">
+                                            ✕ Agotado
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-estado badge-estado--critico">
+                                            ▲ Stock Crítico ({{ producto.stock }})
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="col-centro">
+                                    <div style="display: inline-flex; gap: 0.35rem;">
+                                        <a href="{% url 'editar_producto' producto.id %}"
+                                           class="button button--secondary button--small"
+                                           title="Editar {{ producto.nombre }}">
+                                            Editar
+                                        </a>
+                                        <a href="{% url 'detalle' producto.id %}"
+                                           class="button button--dark button--small"
+                                           title="Ver detalle de {{ producto.nombre }}">
+                                            Ver
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="reporte-vacio">
+                                    <p>🎉 ¡Excelente! No existen productos con stock igual o inferior a {{ umbral }} unidades.</p>
+                                    <a href="{% url 'lista' %}" class="button button--secondary button--small">Volver al catálogo completo</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

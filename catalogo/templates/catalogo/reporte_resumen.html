@@ -1,0 +1,144 @@
+{% extends 'catalogo/base.html' %}
+{% load static %}
+
+{% block title %}Reporte de Resumen por Categoría | {{ contenido.marca }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'catalogo/css/reportes.css' %}?v=1.0">
+{% endblock %}
+
+{% block content %}
+<section class="reporte-seccion">
+    <div class="reporte-contenedor">
+        <!-- Navegación secundaria / Migas de pan -->
+        <nav class="reporte-migas" aria-label="Migas de pan">
+            <a href="{% url 'inicio' %}">Inicio</a>
+            <span aria-hidden="true">/</span>
+            <a href="{% url 'lista' %}">Catálogo</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">Reporte por Categoría (Agrupación)</span>
+        </nav>
+
+        <!-- Cabecera principal del reporte y selector de vista -->
+        <header class="reporte-cabecera">
+            <div class="reporte-titulos">
+                <h1>{{ titulo_reporte }}</h1>
+                <p>{{ subtitulo_reporte }}</p>
+            </div>
+            <nav class="reporte-selector-tabs" aria-label="Vistas de reporte">
+                <a href="{% url 'reporte_resumen' %}" class="reporte-tab-btn activo" aria-current="page">
+                    <span aria-hidden="true">📊</span> Resumen por Categoría
+                </a>
+                <a href="{% url 'reporte_critico' %}" class="reporte-tab-btn">
+                    <span aria-hidden="true">⚠️</span> Stock Crítico
+                </a>
+            </nav>
+        </header>
+
+        <!-- Tarjetas de métricas consolidadas (Cálculos de aggregate) -->
+        <div class="metricas-grid">
+            <article class="metrica-card">
+                <span class="metrica-card__label">Familias técnicas</span>
+                <span class="metrica-card__valor">{{ categorias_reporte|length }}</span>
+                <span class="metrica-card__nota">Categorías activas registradas</span>
+            </article>
+
+            <article class="metrica-card">
+                <span class="metrica-card__label">Total de artículos</span>
+                <span class="metrica-card__valor">{{ metricas_globales.gran_total_productos|default:0 }}</span>
+                <span class="metrica-card__nota">Ítems inventariados en sistema</span>
+            </article>
+
+            <article class="metrica-card metrica-card--success">
+                <span class="metrica-card__label">Stock total en bodega</span>
+                <span class="metrica-card__valor">{{ metricas_globales.gran_total_stock|default:0 }}</span>
+                <span class="metrica-card__nota">Unidades físicas acumuladas</span>
+            </article>
+
+            <article class="metrica-card">
+                <span class="metrica-card__label">Precio promedio global</span>
+                <span class="metrica-card__valor">${{ metricas_globales.promedio_precio_global|default:0|floatformat:0 }}</span>
+                <span class="metrica-card__nota">Rango: ${{ metricas_globales.precio_mas_bajo|default:0|floatformat:0 }} a ${{ metricas_globales.precio_mas_alto|default:0|floatformat:0 }}</span>
+            </article>
+        </div>
+
+        <!-- Tabla con iteración de resultados resueltos desde el ORM (annotate) -->
+        <div class="reporte-tabla-card">
+            <div class="reporte-tabla-card__header">
+                <h2>Agrupación por Familia Técnica</h2>
+                <a href="{% url 'crear_producto' %}" class="button button--primary button--small">
+                    <span aria-hidden="true">+</span> Nuevo producto
+                </a>
+            </div>
+
+            <div class="reporte-tabla-responsive">
+                <table class="reporte-tabla">
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th class="col-numero">N° de Productos</th>
+                            <th class="col-numero">Stock Total</th>
+                            <th class="col-numero">Precio Promedio</th>
+                            <th class="col-numero">Precio Mínimo</th>
+                            <th class="col-numero">Precio Máximo</th>
+                            <th class="col-centro">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in categorias_reporte %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.nombre }}</strong>
+                                </td>
+                                <td class="col-numero">
+                                    {{ item.total_productos }} ítem{{ item.total_productos|pluralize:"s" }}
+                                </td>
+                                <td class="col-numero">
+                                    <strong>{{ item.stock_total|default:0 }}</strong> unid.
+                                </td>
+                                <td class="col-numero">
+                                    ${{ item.promedio_precio|default:0|floatformat:0 }}
+                                </td>
+                                <td class="col-numero">
+                                    ${{ item.precio_minimo|default:0|floatformat:0 }}
+                                </td>
+                                <td class="col-numero">
+                                    ${{ item.precio_maximo|default:0|floatformat:0 }}
+                                </td>
+                                <td class="col-centro">
+                                    <a href="{% url 'lista' %}?categoria={{ item.nombre|urlencode }}#catalogo"
+                                       class="button button--secondary button--small"
+                                       title="Ver artículos de {{ item.nombre }}">
+                                        Ver artículos
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="reporte-vacio">
+                                    <p>No se encontraron registros de categorías en la base de datos.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Total General / Promedio Global</td>
+                            <td class="col-numero">{{ metricas_globales.gran_total_productos|default:0 }}</td>
+                            <td class="col-numero">{{ metricas_globales.gran_total_stock|default:0 }}</td>
+                            <td class="col-numero">${{ metricas_globales.promedio_precio_global|default:0|floatformat:0 }}</td>
+                            <td class="col-numero">${{ metricas_globales.precio_mas_bajo|default:0|floatformat:0 }}</td>
+                            <td class="col-numero">${{ metricas_globales.precio_mas_alto|default:0|floatformat:0 }}</td>
+                            <td class="col-centro">
+                                <a href="{% url 'lista' %}" class="button button--secondary button--small">
+                                    Ver catálogo
+                                </a>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

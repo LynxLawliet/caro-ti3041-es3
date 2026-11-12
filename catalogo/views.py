@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Avg, Count, Max, Min, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
@@ -642,4 +643,75 @@ def eliminar_producto(request, id):
         'contenido': cargar_contenido(),
     }
     return render(request, 'catalogo/eliminar_producto.html', contexto)
+
+
+def reporte_resumen(request):
+    """
+    Vista del Reporte 1 (Agrupación):
+    Agrupa los productos por categoría utilizando annotate de Django para calcular
+    la cantidad de registros (Count), el promedio de precios (Avg) y la suma total de stock (Sum).
+    Adicionalmente, utiliza aggregate para computar métricas consolidadas globales de todo el inventario.
+    """
+    categorias_reporte = Categoria.objects.annotate(
+        total_productos=Count('productos'),
+        promedio_precio=Avg('productos__precio'),
+        stock_total=Sum('productos__stock'),
+        precio_minimo=Min('productos__precio'),
+        precio_maximo=Max('productos__precio'),
+    ).order_by('nombre')
+
+    metricas_globales = Producto.objects.aggregate(
+        gran_total_productos=Count('id'),
+        gran_total_stock=Sum('stock'),
+        promedio_precio_global=Avg('precio'),
+        precio_mas_alto=Max('precio'),
+        precio_mas_bajo=Min('precio'),
+    )
+
+    contexto = {
+        'categorias_reporte': categorias_reporte,
+        'metricas_globales': metricas_globales,
+        'titulo_reporte': 'Reporte de Productos por Categoría',
+        'subtitulo_reporte': 'Agrupación estadística con cálculo de existencias y valores promedio por familia técnica.',
+        'contenido': cargar_contenido(),
+    }
+    return render(request, 'catalogo/reporte_resumen.html', contexto)
+
+
+def reporte_critico(request):
+    """
+    Vista del Reporte 2 (Filtrado):
+    Genera un listado de productos que cumplen una condición crítica de inventario
+    (stock bajo o agotado). Aplica obligatoriamente los métodos filter y order_by del ORM
+    para filtrar los productos por el umbral de stock y ordenarlos prioritariamente por
+    stock ascendente y nombre.
+    """
+    try:
+        umbral = int(request.GET.get('umbral', 5))
+        if umbral < 0:
+            umbral = 5
+    except (TypeError, ValueError):
+        umbral = 5
+
+    # Aplicación obligatoria de filter y order_by del ORM
+    productos_criticos = (
+        Producto.objects.filter(stock__lte=umbral)
+        .select_related('categoria')
+        .order_by('stock', 'nombre')
+    )
+
+    total_criticos = productos_criticos.count()
+    total_agotados = sum(1 for p in productos_criticos if p.stock == 0)
+
+    contexto = {
+        'productos_criticos': productos_criticos,
+        'umbral': umbral,
+        'total_criticos': total_criticos,
+        'total_agotados': total_agotados,
+        'titulo_reporte': 'Reporte de Stock Crítico y Reposición',
+        'subtitulo_reporte': f'Listado prioritario de artículos con inventario igual o inferior a {umbral} unidades.',
+        'contenido': cargar_contenido(),
+    }
+    return render(request, 'catalogo/reporte_critico.html', contexto)
+
 

@@ -155,6 +155,28 @@ Proporcionó la estructura del formulario ProductoForm con validaciones personal
 Qué se usó o modificó:
 Se adoptó la arquitectura de ModelForm y las tres vistas funcionales con sus correspondientes redirecciones POST hacia 'lista'. Se adaptaron los widgets y las plantillas para integrarse coherentemente con los tokens de diseño (variables CSS, colores #20292D, #F9B313, #F4F5F2 y componentes tipo tarjeta) de Ferretería Caro-Kahn, incorporando también limpieza del producto en el carrito de sesión en caso de eliminación y estilos modulares en formulario.css sin romper ninguno de los tests preexistentes del proyecto.
 
+Consulta 7:
+
+"Actúa como un desarrollador backend senior experto en Django ORM. Necesito implementar dos vistas de reportes y analíticas para una ferretería:
+
+1. Reporte 1 (Agrupación):
+   - Una vista ('reporte_resumen') que agrupe los productos por categoría utilizando las funciones de agregación del ORM (annotate y aggregate).
+   - Debe calcular para cada categoría la cantidad de productos asociados (Count), el promedio de precios (Avg) y la suma total de stock (Sum), además de precios mínimos y máximos.
+   - Debe incluir métricas consolidadas globales mediante aggregate para totalizar productos, stock total y promedio global de la ferretería.
+2. Reporte 2 (Filtrado):
+   - Una vista ('reporte_critico') que filtre los productos que cumplan con una condición de inventario crítico (stock menor o igual a un umbral definido, por ejemplo 5 unidades).
+   - Es obligatorio utilizar los métodos filter() y order_by() del ORM para obtener la información ordenada prioritariamente por menor stock y nombre del producto.
+3. Configuración de rutas y plantillas:
+   - Rutas en urls.py: path('reporte-resumen/', ...) y path('reporte-critico/', ...).
+   - Plantillas HTML independientes ('reporte_resumen.html' y 'reporte_critico.html') que extiendan base.html y muestren los resultados finales en tablas iteradas con {% for %}, sin realizar cálculos en el template.
+   - Enlaces directos a ambos reportes en la barra de navegación de base.html."
+
+Respuesta de la IA:
+Entregó la formulación de las consultas del ORM con Categoria.objects.annotate(total_productos=Count('productos'), promedio_precio=Avg('productos__precio'), stock_total=Sum('productos__stock')) y Producto.objects.aggregate(...), la consulta de filtrado Producto.objects.filter(stock__lte=umbral).order_by('stock', 'nombre'), las definiciones de rutas en urls.py y la estructura HTML semántica de las tablas con iteradores para ambos reportes.
+
+Qué se usó o modificó:
+Se implementaron íntegramente las consultas con annotate, aggregate, filter y order_by en views.py. Se enriqueció la experiencia visual creando una hoja de estilos modular (reportes.css) alineada a la paleta de colores institucional, se incorporó un selector dinámico de umbral de stock en el reporte crítico y se actualizaron los menús de navegación en base.html (tanto en el header como en el pie de página) para garantizar el acceso directo desde todo el sitio.
+
 Conclusión:
 
 Durante el desarrollo de esta primera evaluación en los laboratorios de INACAP Sede Osorno, utilicé la Inteligencia Artificial principalmente como una herramienta para acelerar la escritura de código repetitivo y maquetar el diseño front-end. Le pedí generar los 40 registros en formato JSON porque inventar cada material de ferretería a mano habría consumido demasiado tiempo de la prueba. Esa respuesta me sirvió tal cual, permitiéndome enfocarme en la lógica de views.py. Por otro lado, al solicitar el diseño de la interfaz, la IA tendía a sobre-complicar el código sugiriendo el uso de Bootstrap o inventando funcionalidades fuera de alcance, como sistemas de carrito de compras o paneles de administración. Tuve que corregir exhaustivamente esas respuestas, eliminando todo el código sobrante para no romper la restricción de la evaluación, que exige trabajar sin base de datos. En este proceso aprendí que es vital aplicar un filtro crítico a las respuestas de la IA, asegurándome de extraer únicamente la herencia de plantillas, el bucle de iteración y el CSS puro que necesitaba para cumplir estrictamente con la mejora visual.

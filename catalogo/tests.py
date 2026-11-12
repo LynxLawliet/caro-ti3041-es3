@@ -734,3 +734,92 @@ class ProductoCRUDTests(TestCase):
         self.assertContains(response, 'Editar')
         self.assertContains(response, 'Eliminar')
 
+
+class ReportesTests(TestCase):
+    def setUp(self):
+        self.cat_test = Categoria.objects.create(nombre="Categoría Especial Analítica")
+        self.p1 = Producto.objects.create(
+            nombre="Producto Test Agotado",
+            categoria=self.cat_test,
+            precio=6000,
+            stock=0,
+            visible=True,
+        )
+        self.p2 = Producto.objects.create(
+            nombre="Producto Test Crítico",
+            categoria=self.cat_test,
+            precio=4000,
+            stock=3,
+            visible=True,
+        )
+        self.p3 = Producto.objects.create(
+            nombre="Producto Test Normal",
+            categoria=self.cat_test,
+            precio=14000,
+            stock=15,
+            visible=True,
+        )
+
+    def test_reporte_resumen_agrupacion_con_annotate_y_aggregate(self):
+        response = self.client.get(reverse('reporte_resumen'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'catalogo/reporte_resumen.html')
+        self.assertContains(response, 'catalogo/css/reportes.css')
+        self.assertContains(response, 'Reporte de Productos por Categoría')
+
+        categorias = response.context['categorias_reporte']
+        cat = next(c for c in categorias if c.nombre == self.cat_test.nombre)
+
+        # Verificación de annotate en la categoría creada: 3 productos, stock total 18, promedio (6000+4000+14000)/3 = 8000
+        self.assertEqual(cat.total_productos, 3)
+        self.assertEqual(cat.stock_total, 18)
+        self.assertAlmostEqual(float(cat.promedio_precio), 8000.0, delta=1)
+        self.assertEqual(cat.precio_minimo, 4000)
+        self.assertEqual(cat.precio_maximo, 14000)
+
+        # Verificación de aggregate global consolidado
+        globales = response.context['metricas_globales']
+        self.assertEqual(globales['gran_total_productos'], Producto.objects.count())
+        self.assertEqual(globales['gran_total_stock'], sum(p.stock for p in Producto.objects.all()))
+
+    def test_reporte_critico_filtrado_con_filter_y_order_by(self):
+        response = self.client.get(reverse('reporte_critico'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'catalogo/reporte_critico.html')
+        self.assertContains(response, 'catalogo/css/reportes.css')
+
+        productos = list(response.context['productos_criticos'])
+        # Todos los productos retornados deben cumplir con stock <= 5
+        self.assertTrue(all(p.stock <= 5 for p in productos))
+        # Deben estar ordenados ascendentemente por stock
+        stocks = [p.stock for p in productos]
+        self.assertEqual(stocks, sorted(stocks))
+
+        # Nuestros productos creados en setUp deben reflejarse según su stock
+        self.assertIn(self.p1, productos)
+        self.assertIn(self.p2, productos)
+        self.assertNotIn(self.p3, productos)
+        self.assertContains(response, 'Agotado')
+
+    def test_reporte_critico_con_umbral_personalizado(self):
+        response = self.client.get(reverse('reporte_critico') + '?umbral=0')
+        self.assertEqual(response.status_code, 200)
+        productos = list(response.context['productos_criticos'])
+        # Todos los productos deben tener stock 0
+        self.assertTrue(all(p.stock == 0 for p in productos))
+        self.assertIn(self.p1, productos)
+        self.assertNotIn(self.p2, productos)
+        self.assertNotIn(self.p3, productos)
+
+    def test_navegacion_principal_contiene_enlaces_a_reportes(self):
+        response = self.client.get(reverse('inicio'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('reporte_resumen'))
+        self.assertContains(response, reverse('reporte_critico'))
+
+        catalogo_resp = self.client.get(reverse('lista'))
+        self.assertEqual(catalogo_resp.status_code, 200)
+        self.assertContains(catalogo_resp, reverse('reporte_resumen'))
+        self.assertContains(catalogo_resp, reverse('reporte_critico'))
+
+

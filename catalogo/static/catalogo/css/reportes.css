@@ -1,0 +1,330 @@
+/* ==========================================================================
+   ESTILOS DE REPORTES Y ANALÍTICAS — FERRETERÍA CARO-KAHN
+   Reporte 1: Agrupación por Categoría (annotate & aggregate)
+   Reporte 2: Filtrado por Stock Crítico (filter & order_by)
+   ========================================================================== */
+
+.reporte-seccion {
+    padding: 2.5rem 0 4.5rem;
+    background-color: var(--color-paper, #f4f5f2);
+    min-height: calc(100vh - 250px);
+}
+
+.reporte-contenedor {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+}
+
+.reporte-migas {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #687276);
+    margin-bottom: 1.25rem;
+}
+
+.reporte-migas a {
+    color: var(--color-ink, #20292d);
+    text-decoration: underline;
+}
+
+.reporte-migas a:hover {
+    color: var(--color-yellow-hover, #d88e00);
+}
+
+/* Encabezado y barra de navegación entre reportes */
+.reporte-cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border, #d9dedc);
+}
+
+.reporte-titulos h1 {
+    font-family: var(--font-display, Georgia, serif);
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    font-weight: 700;
+    color: var(--color-ink, #20292d);
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin: 0 0 0.5rem;
+}
+
+.reporte-titulos p {
+    font-size: 1rem;
+    color: var(--color-text-muted, #687276);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.reporte-selector-tabs {
+    display: inline-flex;
+    background: var(--color-surface, #ffffff);
+    padding: 0.35rem;
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-sm, 0.35rem);
+    gap: 0.35rem;
+}
+
+.reporte-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius-sm, 0.35rem);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text, #172024);
+    text-decoration: none;
+    transition: all 180ms ease;
+}
+
+.reporte-tab-btn:hover {
+    background: var(--color-paper, #f4f5f2);
+    color: var(--color-ink, #20292d);
+}
+
+.reporte-tab-btn.activo {
+    background: var(--color-ink, #20292d);
+    color: var(--color-surface, #ffffff);
+}
+
+/* Grilla de tarjetas estadísticas (KPIs) */
+.metricas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.metrica-card {
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-md, 0.65rem);
+    padding: 1.35rem 1.5rem;
+    box-shadow: var(--shadow-card, 0 0.5rem 1.5rem rgba(20, 28, 31, 0.08));
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    border-left: 4px solid var(--color-yellow, #f9b313);
+}
+
+.metrica-card--danger {
+    border-left-color: var(--color-danger, #c84a3a);
+}
+
+.metrica-card--success {
+    border-left-color: var(--color-success, #2e8b57);
+}
+
+.metrica-card__label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted, #687276);
+}
+
+.metrica-card__valor {
+    font-family: var(--font-display, Georgia, serif);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-ink, #20292d);
+    line-height: 1.1;
+    margin: 0.2rem 0;
+}
+
+.metrica-card__nota {
+    font-size: 0.82rem;
+    color: var(--color-text-muted, #687276);
+}
+
+/* Barra de controles para reporte de filtrado */
+.filtro-umbral-card {
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-sm, 0.35rem);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.filtro-umbral-form {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.filtro-umbral-form label {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--color-text, #172024);
+}
+
+.filtro-umbral-form input[type="number"],
+.filtro-umbral-form select {
+    height: 2.4rem;
+    padding: 0 0.75rem;
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-sm, 0.35rem);
+    background: var(--color-paper, #f4f5f2);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+/* Tarjeta y tabla de datos */
+.reporte-tabla-card {
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #d9dedc);
+    border-radius: var(--radius-md, 0.65rem);
+    overflow: hidden;
+    box-shadow: var(--shadow-card, 0 0.5rem 1.5rem rgba(20, 28, 31, 0.08));
+}
+
+.reporte-tabla-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.15rem 1.5rem;
+    background: #fafbf9;
+    border-bottom: 1px solid var(--color-border, #d9dedc);
+}
+
+.reporte-tabla-card__header h2 {
+    font-family: var(--font-display, Georgia, serif);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-ink, #20292d);
+    margin: 0;
+}
+
+.reporte-tabla-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.reporte-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-interface, Inter, system-ui, sans-serif);
+    text-align: left;
+}
+
+.reporte-tabla th {
+    background-color: var(--color-ink, #20292d);
+    color: #ffffff;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.reporte-tabla th.col-numero,
+.reporte-tabla td.col-numero {
+    text-align: right;
+}
+
+.reporte-tabla th.col-centro,
+.reporte-tabla td.col-centro {
+    text-align: center;
+}
+
+.reporte-tabla td {
+    padding: 0.95rem 1.1rem;
+    border-bottom: 1px solid var(--color-border, #d9dedc);
+    font-size: 0.92rem;
+    color: var(--color-text, #172024);
+    vertical-align: middle;
+}
+
+.reporte-tabla tbody tr:hover {
+    background-color: #f7f9f8;
+}
+
+.reporte-tabla tfoot td {
+    background-color: var(--color-paper, #f4f5f2);
+    font-weight: 800;
+    color: var(--color-ink, #20292d);
+    border-top: 2px solid var(--color-ink, #20292d);
+    border-bottom: none;
+    font-size: 0.95rem;
+}
+
+/* Badges de estado en el reporte */
+.badge-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.badge-estado--agotado {
+    background-color: #fdf2f2;
+    color: var(--color-danger, #c84a3a);
+    border: 1px solid rgba(200, 74, 58, 0.4);
+}
+
+.badge-estado--critico {
+    background-color: #fff9e6;
+    color: #b7791f;
+    border: 1px solid rgba(216, 142, 0, 0.4);
+}
+
+.badge-estado--ok {
+    background-color: #eafaf1;
+    color: var(--color-success, #2e8b57);
+    border: 1px solid rgba(46, 139, 87, 0.3);
+}
+
+/* Estado vacío */
+.reporte-vacio {
+    padding: 3.5rem 1.5rem;
+    text-align: center;
+    color: var(--color-text-muted, #687276);
+}
+
+.reporte-vacio p {
+    font-size: 1.05rem;
+    margin: 0.5rem 0 1.25rem;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .reporte-cabecera {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .reporte-selector-tabs {
+        width: 100%;
+        display: flex;
+    }
+
+    .reporte-tab-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .filtro-umbral-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
